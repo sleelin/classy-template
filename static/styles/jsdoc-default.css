@@ -53,6 +53,10 @@ header {
     padding: 0 4px;
 }
 
+header h1, header h2, header h3, header h4 {
+    font-size: 0;
+}
+
 tt, code, kbd, samp {
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
 }
@@ -155,18 +159,18 @@ h1 {
     margin: 12px 24px 20px;
 }
 
-h2, h3.subsection-title {
+h2, h3.subsection-title, header h2 span {
     font-size: 30px;
     font-weight: 700;
     margin-bottom: 12px;
 }
 
-h3 {
+h3, header h3 span {
     font-size: 24px;
     margin-bottom: 12px;
 }
 
-h4 {
+h4, header h4 span {
     font-size: 18px;
     margin-bottom: 12px;
     color: #4d4e53;
