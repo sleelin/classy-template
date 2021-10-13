@@ -1,16 +1,14 @@
 <?js
-    var self = this;
-
     // Sort sub-items under their parent items (like opts.classname)
     var parentItem = null;
     obj.items.forEach(function (item, i) {
         var itemRegExp;
 
         if (!item) return;
-        if (parentItem && parentItem.name && item.name) {
+        if (parentItem?.name && item.name) {
             try {
                 itemRegExp = new RegExp("^(?:" + parentItem.name + "(?:\\[\\])*)\\.(.+)$");
-            } catch (e) {
+            } catch {
                 // There's probably a typo in the JSDoc comment that resulted in a weird parameter name
                 return;
             }
@@ -33,7 +31,7 @@
     obj.hasDefault = false;
     obj.hasName = false;
 
-    obj.items.forEach(function (item) {
+    obj.items.forEach((item) => {
         if (!item) return;
         if (item.optional || item.nullable || item.variable) obj.hasAttributes = true;
         if (item.name) obj.hasName = true;
@@ -59,26 +57,22 @@
             <?js if (obj.hasName) { ?>
                 <td class="name">
                     <code>
-                        <?js= (item.variable ? `&hellip;${item.name}` : item.name) ?><span class="signature-attributes"><?js= [...(item.optional ? ["opt"] : []), ...(item.nullable ? ["nullable"] : [])].join(", ") ?></span>
+                        <?js= (item?.variable ? `&hellip;${item.name}` : item.name) ?><span class="signature-attributes"><?js= [...(item.optional ? ["opt"] : []), ...(item.nullable ? ["nullable"] : [])].join(", ") ?></span>
                     </code>
                 </td>
             <?js } ?>
 
-            <td class="type">
-                <?js if (item.type && item.type.names) { ?><?js= self.partial("tags/type.tmpl", item.type.names) ?><?js } ?>
-            </td>
+            <td class="type"><?js= (item?.type?.names ? this.partial("tags/type.tmpl", item.type.names) : "") ?></td>
 
             <?js if (obj.hasDefault) { ?>
-                <td class="default">
-                    <?js if (typeof item.defaultvalue !== "undefined") { ?><?js= self.htmlsafe(item.defaultvalue) ?><?js } ?>
-                </td>
+                <td class="default"><?js= (typeof item.defaultvalue !== "undefined") ? this.htmlsafe(item.defaultvalue) : "" ?></td>
             <?js } ?>
 
             <td class="description last">
                 <?js= item.description ?>
                 <?js if (item.subitems) { ?>
                     <h6>Properties</h6>
-                    <?js= self.partial("partials/typedef.tmpl", {items: item.subitems, isEnum: obj.isEnum}) ?>
+                    <?js= this.partial("partials/typedef.tmpl", {items: item.subitems, isEnum: obj.isEnum}) ?>
                 <?js } ?>
             </td>
         </tr>
