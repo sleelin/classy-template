@@ -75,20 +75,75 @@ class PublishUtils {
             PublishUtils.generateTutorials(child);
         }
     }
-}
-
-function buildItemTypeStrings(item) {
-    return (item?.type?.names || []).map(name => helper.linkto(name, helper.htmlsafe(name)));
-}
-
-function buildAttribsString(attribs) {
-    let attribsString = '';
-
-    if (attribs && attribs.length) {
-        attribsString = helper.htmlsafe(util.format("(%s) ", attribs.join(", ")));
+    
+    static typeStrings({type}) {
+        return (type?.names || []).map(name => helper.linkto(name, helper.htmlsafe(name)));
     }
-
-    return attribsString;
+    
+    static attribsString(attribs) {
+        return attribs.length ? helper.htmlsafe(`(${attribs.join(", ")})`) : "";
+    }
+    
+    static buildNav(members, data) {
+        let nav = [`<h2><a href="index.html">Home</a></h2>`],
+            seen = {},
+            linkFns = {
+                Externals: (ln, name) =>  helper.linkto(ln, name.replace(/(^"|"$)/g, '')),
+                Tutorials: (ln, name) => PublishUtils.linkTutorial(name)
+            };
+        
+        nav.push(...[
+            PublishUtils.buildStructuredNav({scope: "global", kind: DocletPage.types}, data, seen, 3),
+            ...["Modules", "Namespaces", "Classes", "Interfaces", "Events", "Mixins", "Externals", "Tutorials"].map(scope =>
+                PublishUtils.buildMemberNav(members[scope.toLowerCase()], scope, scope === "Tutorials" ? {} : seen, linkFns[scope] ?? helper.linkto)),
+        ]);
+        
+        if (members.globals.length) {
+            let globalNav = members.globals.map(m => {
+                let {kind, longname, name} = m,
+                    out = ((String(kind) !== "typedef" && !seen[longname]) ? `<li>${helper.linkto(longname, name)}</li>` : "");
+                
+                seen[longname] = true;
+                return out;
+            }).join("");
+            
+            // Turn the heading into a link so you can actually get to the global page
+            nav.push(!globalNav ? `<h3>${helper.linkto("global", "Global")}</h3>` : `<h3>Global</h3><ul>${globalNav}</ul>`);
+        }
+        
+        return nav.join("");
+    }
+    
+    static buildStructuredNav(spec, data, seen, depth) {
+        let listContent = "",
+            items = helper.find(data, spec);
+        
+        for (let item of items) {
+            if (!(seen[item.longname])) {
+                let title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, '')),
+                    children = PublishUtils.buildStructuredNav({memberof: item.longname, kind: ["namespace", "class"]}, data, seen, depth+1);
+                
+                listContent += `<li>${((depth < 5 || children.length) ? `<h${depth}>${title}</h${depth}>` : title) + children}</li>`;
+                seen[item.longname] = true;
+            }
+        }
+        
+        return listContent.length ? `<ul>${listContent}</ul>` : "";
+    }
+    
+    static buildMemberNav(items, heading, seen, linktoFn) {
+        let nav = items.map(item => {
+            if (!item.longname) {
+                return `<li>${linktoFn("", item.name)}</li>`;
+            } else if (!seen[item.longname]) {
+                let displayName = env.conf.templates.default.useLongnameInNav ? item.longname : item.name;
+                seen[item.longname] = true;
+                return `<li>${linktoFn(item.longname, displayName.replace(/\b(module|event):/g, ''))}</li>`;
+            }
+        }).join("");
+        
+        return nav.length ? `<h3>${heading}</h3><ul>${itemsNav}</ul>` : "";
+    }
 }
 
 class DocletPage {
@@ -105,8 +160,10 @@ class DocletPage {
         
         DocletPage.#pages.set(doclet, this);
         this.#resolveLinks = resolveLinks;
-        this.doclet = doclet;
+        this.longname = doclet.longname;
+        this.env = env;
         this.title = (DocletPage.titles[doclet.kind] || "") + doclet.name;
+        this.doclet = doclet;
         this.docs = new Set(docs);
         this.path = doclet?.meta?.source;
         this.link = helper.createLink(doclet);
@@ -141,7 +198,7 @@ class DocletPage {
     }
     
     generate(fileName) {
-        let html = view.render("container.tmpl", {env: env, title: this.title, docs: [...this.docs.values()]});
+        let html = view.render("container.tmpl", Object.assign(this, {docs: [...this.docs.values()]}));
         fs.writeFileSync(path.join(outdir, fileName || this.link), (this.#resolveLinks !== false ? helper.resolveLinks(html) : html), "utf8");
     }
     
@@ -263,8 +320,8 @@ class DocletPage {
             if (needsSignature) {
                 let source = doclet.yields || doclet.returns || [],
                     // Prepare attribs and returns signatures
-                    attribs = buildAttribsString([...new Set(source.map(item => helper.getAttribs(item)).flat())]),
-                    returns = source.map(t => buildItemTypeStrings(t)).join("|"),
+                    attribs = PublishUtils.attribsString([...new Set(source.map(item => helper.getAttribs(item)).flat())]),
+                    returns = source.map(s => PublishUtils.typeStrings(s)).join("|"),
                     // Prepare params signature
                     args = params.filter(({name}) => name && !name.includes(".")).map((item) => {
                             let {variable, optional, nullable} = item,
@@ -282,7 +339,7 @@ class DocletPage {
                 doclet.signature = `<span class="signature">${signature}(${args})</span>`;
                 doclet.signature += `<span class="type-signature">${returns.length ? ` &rarr; ${attribs}{${returns}}` : ""}</span>`;
             } else if (needsTypes) {
-                let types = buildItemTypeStrings(doclet);
+                let types = PublishUtils.typeStrings(doclet);
                 
                 // Add types to the signature
                 doclet.signature = `${signature}<span class="type-signature">${types.length ? `: ${types}` : ""}</span>`;
@@ -291,7 +348,7 @@ class DocletPage {
             
             if (needsSignature || needsTypes) {
                 // Add the attributes tag if signatures or types were set above
-                doclet.attribs = `<span class="type-signature">${buildAttribsString(helper.getAttribs(doclet))}</span>`;
+                doclet.attribs = `<span class="type-signature">${PublishUtils.attribsString(helper.getAttribs(doclet))}</span>`;
             }
         }
     }
@@ -329,112 +386,10 @@ class DocletPage {
     }
 }
 
-function wrapTag(tag, content) {
-    return `<${tag}>${content}</${tag}>`;
-}
-
-function buildStructuredNav(spec, data, seen, depth) {
-    let listContent = "",
-        items = helper.find(data, spec);
-    
-    for (let item of items) {
-        if (!Object.prototype.hasOwnProperty.call(seen, item.longname)) {
-            let title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, '')),
-                children = buildStructuredNav({memberof: item.longname, kind: ["namespace", "class"]}, data, seen, depth+1);
-            
-            listContent += wrapTag("li", ((depth < 5 || children.length) ? wrapTag(`h${depth}`, title) : title) + children);
-            seen[item.longname] = true;
-        }
-    }
-    
-    return listContent.length ? wrapTag("ul", listContent) : "";
-}
-
-function buildMemberNav(items, itemHeading, itemsSeen, linktoFn) {
-    let nav = '';
-    
-    if (items.length) {
-        let itemsNav = '';
-
-        items.forEach(item => {
-            let displayName;
-
-            if (!Object.prototype.hasOwnProperty.call(item, "longname")) {
-                itemsNav += `<li>${linktoFn('', item.name)}</li>`;
-            }
-            else if (!Object.prototype.hasOwnProperty.call(itemsSeen, item.longname)) {
-                if (env.conf.templates.default.useLongnameInNav) {
-                    displayName = item.longname;
-                } else {
-                    displayName = item.name;
-                }
-                itemsNav += `<li>${linktoFn(item.longname, displayName.replace(/\b(module|event):/g, ''))}</li>`;
-
-                itemsSeen[item.longname] = true;
-            }
-        });
-
-        if (itemsNav !== '') {
-            nav += `<h3>${itemHeading}</h3><ul>${itemsNav}</ul>`;
-        }
-    }
-
-    return nav;
-}
-
 /**
- * Create the navigation sidebar.
- * @param {object} members The members that will be used to create the sidebar.
- * @param data
- * @param {array<object>} members.classes
- * @param {array<object>} members.externals
- * @param {array<object>} members.globals
- * @param {array<object>} members.mixins
- * @param {array<object>} members.modules
- * @param {array<object>} members.namespaces
- * @param {array<object>} members.tutorials
- * @param {array<object>} members.events
- * @param {array<object>} members.interfaces
- * @return {string} The HTML for the navigation sidebar.
- */
-function buildNav(members, data) {
-    let nav = `<h2><a href="index.html">Home</a></h2>`,
-        seen = {}, globalNav;
-    
-    nav += buildStructuredNav({scope: "global", kind: DocletPage.types}, data, seen, 3);
-    
-    for (let scope of ["Modules", "Namespaces", "Classes", "Interfaces", "Events", "Mixins", "Externals"]) {
-        let linkFn = (scope !== "Externals" ? helper.linkto : (ln, name) =>  helper.linkto(ln, name.replace(/(^"|"$)/g, '')));
-        nav += buildMemberNav(members[scope.toLowerCase()], scope, seen, linkFn);
-    }
-    
-    nav += buildMemberNav(members.tutorials, "Tutorials", {}, (ln, name) => PublishUtils.linkTutorial(name));
-
-    if (members.globals.length) {
-        globalNav = '';
-
-        members.globals.forEach(({kind, longname, name}) => {
-            if (kind !== "typedef" && !Object.prototype.hasOwnProperty.call(seen, longname)) {
-                globalNav += `<li>${helper.linkto(longname, name)}</li>`;
-            }
-            seen[longname] = true;
-        });
-
-        if (!globalNav) {
-            // turn the heading into a link so you can actually get to the global page
-            nav += `<h3>${helper.linkto("global", "Global")}</h3>`;
-        } else {
-            nav += `<h3>Global</h3><ul>${globalNav}</ul>`;
-        }
-    }
-
-    return nav;
-}
-
-/**
-    @param {TAFFY} data See <http://taffydb.com/>.
-    @param {object} opts
-    @param {Tutorial} tutorials
+ * @param {TAFFY} data - See <http://taffydb.com/>.
+ * @param {Object} opts
+ * @param {Tutorial} tutorials
  */
 exports.publish = (data, opts, tutorials) => {
     let templatePath = path.normalize(opts.template),
@@ -443,7 +398,7 @@ exports.publish = (data, opts, tutorials) => {
         globalUrl = helper.getUniqueFilename("global"),
         indexUrl = helper.getUniqueFilename("index"),
         outputSourceFiles = conf?.default?.outputSourceFiles !== false,
-        pages = [], members;
+        pages = [];
     
     // Get things ready
     helper.prune(data);
@@ -469,12 +424,9 @@ exports.publish = (data, opts, tutorials) => {
         ...(outputSourceFiles ? DocletPage.sources(data().get(), false, opts.encoding) : [])
     ]);
     
-    // TODO: this is pretty obsolete now
-    members = helper.getMembers(data);
-    members.tutorials = tutorials.children;
-    
     // TODO: unique nav for each page (to highlight active link)
-    view.nav = buildNav(members, data);
+    let members = Object.assign(helper.getMembers(data), {tutorials: tutorials.children});
+    view.nav = PublishUtils.buildNav(members, data);
     
     // Index page displays information from package.json and lists files
     pages.unshift(...[
@@ -487,6 +439,6 @@ exports.publish = (data, opts, tutorials) => {
     ]);
     
     // Generate all the pages, then generate the tutorials!
-    for (let page of pages) page.generate(helper.longnameToUrl[page.doclet.longname] ?? page.doclet.longname);
+    for (let page of pages) page.generate(helper.longnameToUrl[page.longname] ?? page.longname);
     PublishUtils.generateTutorials(tutorials);
 };
