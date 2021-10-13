@@ -1,0 +1,87 @@
+<?js
+    var self = this;
+
+    // Sort sub-items under their parent items (like opts.classname)
+    var parentItem = null;
+    obj.items.forEach(function (item, i) {
+        var itemRegExp;
+
+        if (!item) return;
+        if (parentItem && parentItem.name && item.name) {
+            try {
+                itemRegExp = new RegExp("^(?:" + parentItem.name + "(?:\\[\\])*)\\.(.+)$");
+            } catch (e) {
+                // There's probably a typo in the JSDoc comment that resulted in a weird parameter name
+                return;
+            }
+
+            if (itemRegExp.test(item.name)) {
+                item.name = RegExp.$1;
+                parentItem.subitems = parentItem.subitems || [];
+                parentItem.subitems.push(item);
+                obj.items[i] = null;
+            } else {
+                parentItem = item;
+            }
+        } else {
+            parentItem = item;
+        }
+    });
+
+    // Determine if we need extra columns, "attributes" and "default"
+    obj.hasAttributes = false;
+    obj.hasDefault = false;
+    obj.hasName = false;
+
+    obj.items.forEach(function (item) {
+        if (!item) return;
+        if (item.optional || item.nullable || item.variable) obj.hasAttributes = true;
+        if (item.name) obj.hasName = true;
+        if (typeof item.defaultvalue !== "undefined" && !obj.isEnum) obj.hasDefault = true;
+    });
+?>
+
+<table>
+    <thead>
+        <tr>
+            <?js if (obj.hasName) { ?><th>Name</th><?js } ?>
+            <th>Type</th>
+            <?js if (obj.hasDefault) { ?><th>Default</th><?js } ?>
+            <th class="last">Description</th>
+        </tr>
+    </thead>
+    <tbody>
+    <?js
+    obj.items.forEach((item) => {
+        if (!item) return;
+    ?>
+        <tr>
+            <?js if (obj.hasName) { ?>
+                <td class="name">
+                    <code>
+                        <?js= (item.variable ? `&hellip;${item.name}` : item.name) ?><span class="signature-attributes"><?js= [...(item.optional ? ["opt"] : []), ...(item.nullable ? ["nullable"] : [])].join(", ") ?></span>
+                    </code>
+                </td>
+            <?js } ?>
+
+            <td class="type">
+                <?js if (item.type && item.type.names) { ?><?js= self.partial("tags/type.tmpl", item.type.names) ?><?js } ?>
+            </td>
+
+            <?js if (obj.hasDefault) { ?>
+                <td class="default">
+                    <?js if (typeof item.defaultvalue !== "undefined") { ?><?js= self.htmlsafe(item.defaultvalue) ?><?js } ?>
+                </td>
+            <?js } ?>
+
+            <td class="description last">
+                <?js= item.description ?>
+                <?js if (item.subitems) { ?>
+                    <h6>Properties</h6>
+                    <?js= self.partial("partials/typedef.tmpl", {items: item.subitems, isEnum: obj.isEnum}) ?>
+                <?js } ?>
+            </td>
+        </tr>
+    <?js }); ?>
+    </tbody>
+</table>
