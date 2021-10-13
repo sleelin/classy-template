@@ -1,111 +1,110 @@
-<?js var self = this; ?>
 <?js if (obj.kind !== "module" && !obj.hideconstructor) { ?>
     <?js if (obj.kind === "class" && obj.classdesc) { ?><h2>Constructor</h2><?js } ?>
     <?js if (obj.kind !== "namespace") { ?>
-        <h4 class="name" id="<?js= id ?>"><?js= obj.attribs + (kind === "class" ? "new " : "") + name + (obj.signature || "") ?></h4>
+        <h4 class="name" id="<?js= obj.id ?>"><?js= obj.attribs + (obj.kind === "class" ? "new " : "") + obj.name + (obj.signature || "") ?></h4>
     <?js } ?>
-    <?js if (obj.summary) { ?><p class="summary"><?js= summary ?></p><?js } ?>
+    <?js if (obj.summary) { ?><p class="summary"><?js= obj.summary ?></p><?js } ?>
 <?js } ?>
 
 <?js if (obj.kind !== "module" && obj.description && !obj.hideconstructor) { ?>
     <div class="description"><?js= obj.description ?></div>
 <?js } ?>
 
-<?js if (obj.augments && obj.alias && obj.alias.indexOf("module:") === 0) { ?>
+<?js if (obj.augments && obj?.alias?.indexOf("module:") === 0) { ?>
     <h5>Extends:</h5>
-    <?js= self.partial("tags/augments.tmpl", obj) ?>
+    <?js= this.partial("tags/augments.tmpl", obj) ?>
 <?js } ?>
 
-<?js if (kind === "event" && obj.type && obj.type.names) { ?>
+<?js if (obj.kind === "event" && obj?.type?.names) { ?>
     <h5>Type:</h5>
     <ul>
-        <li><?js= self.partial("tags/type.tmpl", obj.type.names) ?></li>
+        <li><?js= this.partial("tags/type.tmpl", obj.type.names) ?></li>
     </ul>
 <?js } ?>
 
-<?js if (obj["this"]) { ?>
+<?js if (obj.this) { ?>
     <h5>This:</h5>
     <ul>
-        <li><?js= self.linkto(obj["this"], obj["this"]) ?></li>
+        <li><?js= this.linkto(obj.this, obj.this) ?></li>
     </ul>
 <?js } ?>
 
-<?js= self.partial("tags/params.tmpl", obj) ?>
-<?js= self.partial("details.tmpl", obj) ?>
+<?js= this.partial("tags/params.tmpl", obj) ?>
+<?js= this.partial("partials/details.tmpl", obj) ?>
 
-<?js if (obj.kind !== "module" && obj.requires && obj.requires.length) { ?>
+<?js if (obj.kind !== "module" && obj?.requires?.length) { ?>
     <h5>Requires:</h5>
     <ul>
-        <?js obj.requires.forEach(function(r) { ?><li><?js= self.linkto(r) ?></li><?js }); ?>
+        <?js obj.requires.forEach((r) => { ?><li><?js= this.linkto(r) ?></li><?js }); ?>
     </ul>
 <?js } ?>
 
-<?js if (obj.fires && fires.length) { ?>
+<?js if (obj?.fires?.length) { ?>
     <h5>Fires:</h5>
     <ul>
-        <?js fires.forEach(function(f) { ?><li><?js= self.linkto(f) ?></li><?js }); ?>
+        <?js obj.fires.forEach((f) => { ?><li><?js= this.linkto(f) ?></li><?js }); ?>
     </ul>
 <?js } ?>
 
-<?js if (obj.listens && listens.length) { ?>
+<?js if (obj?.listens?.length) { ?>
     <h5>Listens to Events:</h5>
     <ul>
-        <?js listens.forEach(function(f) { ?><li><?js= self.linkto(f) ?></li><?js }); ?>
+        <?js obj.listens.forEach((f) => { ?><li><?js= this.linkto(f) ?></li><?js }); ?>
     </ul>
 <?js } ?>
 
-<?js if (obj.listeners && listeners.length) { ?>
+<?js if (obj?.listeners?.length) { ?>
     <h5>Listeners of This Event:</h5>
     <ul>
-        <?js listeners.forEach(function(f) { ?><li><?js= self.linkto(f) ?></li><?js }); ?>
+        <?js listeners.forEach((f) => { ?><li><?js= this.linkto(f) ?></li><?js }); ?>
     </ul>
 <?js } ?>
 
-<?js if (obj.modifies && modifies.length) { ?>
+<?js if (obj?.modifies?.length) { ?>
     <h5>Modifies:</h5>
-    <?js if (modifies.length > 1) { ?>
+    <?js if (obj.modifies.length > 1) { ?>
         <ul>
-            <?js modifies.forEach(function(m) { ?><li><?js= self.partial("modifies.tmpl", m) ?></li><?js }); ?>
+            <?js obj.modifies.forEach((m) => { ?><li><?js= this.partial("modifies.tmpl", m) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js modifies.forEach(function(m) { ?><?js= self.partial("modifies.tmpl", m) ?><?js }); ?>
+        <?js obj.modifies.forEach((m) => { ?><?js= this.partial("modifies.tmpl", m) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
-<?js if (obj.exceptions && exceptions.length) { ?>
+<?js if (obj?.exceptions?.length) { ?>
     <h5>Throws:</h5>
-    <?js if (exceptions.length > 1) { ?>
+    <?js if (obj.exceptions.length > 1) { ?>
         <ul>
-            <?js exceptions.forEach(function(r) { ?><li><?js= self.partial("exceptions.tmpl", r) ?></li><?js }); ?>
+            <?js obj.exceptions.forEach((r) => { ?><li><?js= this.partial("exceptions.tmpl", r) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js exceptions.forEach(function(r) { ?><?js= self.partial("exceptions.tmpl", r) ?><?js }); ?>
+        <?js obj.exceptions.forEach((r) => { ?><?js= this.partial("exceptions.tmpl", r) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
 <?js if (obj.returns && returns.length) { ?>
     <h5>Returns:</h5>
-    <?js if (returns.length > 1) { ?>
+    <?js if (obj.returns.length > 1) { ?>
         <ul>
-            <?js returns.forEach(function(r) { ?><li><?js= self.partial("returns.tmpl", r) ?></li><?js }); ?>
+            <?js obj.returns.forEach((r) => { ?><li><?js= this.partial("returns.tmpl", r) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js returns.forEach(function(r) { ?><?js= self.partial("returns.tmpl", r) ?><?js }); ?>
+        <?js obj.returns.forEach((r) => { ?><?js= this.partial("returns.tmpl", r) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
-<?js if (obj.yields && yields.length) { ?>
+<?js if (obj?.yields?.length) { ?>
     <h5>Yields:</h5>
-    <?js if (yields.length > 1) { ?>
+    <?js if (obj.yields.length > 1) { ?>
         <ul>
-            <?js yields.forEach(function(r) { ?><li><?js= self.partial("returns.tmpl", r) ?></li><?js }); ?>
+            <?js obj.yields.forEach((r) => { ?><li><?js= this.partial("returns.tmpl", r) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js yields.forEach(function(r) { ?><?js= self.partial("returns.tmpl", r) ?><?js }); ?>
+        <?js obj.yields.forEach((r) => { ?><?js= this.partial("returns.tmpl", r) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
-<?js if (obj.examples && examples.length) { ?>
-    <h5>Example<?js= examples.length > 1 ? "s" : "" ?></h5>
-    <?js= self.partial("examples.tmpl", examples) ?>
+<?js if (obj?.examples?.length) { ?>
+    <h5>Example<?js= obj.examples.length > 1 ? "s" : "" ?></h5>
+    <?js= this.partial("examples.tmpl", obj.examples) ?>
 <?js } ?>
