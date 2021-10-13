@@ -124,7 +124,7 @@ params.forEach(function (param) {
         <td class="description last"><?js= param.description ?>
             <?js if (param.subparams) { ?>
             <h6>Properties</h6>
-            <?js= self.partial('params.tmpl', param.subparams) ?>
+            <?js= self.partial('tags/params.tmpl', param.subparams) ?>
             <?js } ?>
         </td>
     </tr>
