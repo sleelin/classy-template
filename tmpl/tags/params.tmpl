@@ -64,7 +64,7 @@
                 </td>
             <?js } ?>
             <td class="type">
-                <?js if (param.type && param.type.names) { ?><?js= self.partial("type.tmpl", param.type.names) ?><?js } ?>
+                <?js if (param.type && param.type.names) { ?><?js= self.partial("tags/type.tmpl", param.type.names) ?><?js } ?>
             </td>
 
             <?js if (obj.hasDefault) { ?>
