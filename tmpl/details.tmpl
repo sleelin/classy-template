@@ -11,7 +11,7 @@ if (data.defaultvalue && (data.defaultvaluetype === 'object' || data.defaultvalu
 
 var properties = data.properties;
 ?>
-<?js= this.partial('properties.tmpl', data) ?>
+<?js= this.partial('tags/properties.tmpl', data) ?>
 <dl class="details">
 
     <?js if (data.version) { ?>
