@@ -49,7 +49,7 @@ docs.forEach(function(doc, i) {
 
             <?js if (doc.augments && doc.augments.length) { ?>
                 <h3 class="subsection-title">Extends</h3>
-                <?js= self.partial("augments.tmpl", doc) ?>
+                <?js= self.partial("tags/augments.tmpl", doc) ?>
             <?js } ?>
 
             <?js if (doc.requires && doc.requires.length) { ?>
