@@ -162,11 +162,12 @@ class DocletPage {
         this.#resolveLinks = resolveLinks;
         this.longname = doclet.longname;
         this.env = env;
-        this.title = (DocletPage.titles[doclet.kind] || "") + doclet.name;
         this.doclet = doclet;
         this.docs = new Set(docs);
         this.path = doclet?.meta?.source;
         this.link = helper.createLink(doclet);
+        this.title = (DocletPage.titles[doclet.kind] || "")
+            + `<span class="ancestors">${(doclet.ancestors || []).join("")}</span>` + doclet.name;
         
         if (!DocletPage.#sources.has(this.path)) {
             DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
