@@ -1,12 +1,8 @@
-<?js
-var data = obj;
-var self = this;
-?>
-<?js if (data.kind === 'package') { ?>
-<h3><?js= data.name ?> <?js= data.version ?></h3>
+<?js if (obj.kind === "package") { ?>
+    <h3><?js= obj.name ?> <?js= obj.version ?></h3>
 <?js } ?>
-<?js if (data.readme) { ?>
-<section>
-    <article><?js= data.readme ?></article>
-</section>
+<?js if (obj.readme) { ?>
+    <section>
+        <article><?js= obj.readme ?></article>
+    </section>
 <?js } ?>
