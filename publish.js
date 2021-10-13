@@ -349,7 +349,7 @@ class DocletPage {
             
             if (needsSignature || needsTypes) {
                 // Add the attributes tag if signatures or types were set above
-                doclet.attribs = `<span class="type-signature">${PublishUtils.attribsString(helper.getAttribs(doclet))}</span>`;
+                doclet.attribs = `<span class="type-signature">${PublishUtils.attribsString(helper.getAttribs(doclet))} </span>`;
             }
         }
     }
