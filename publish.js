@@ -142,7 +142,7 @@ class PublishUtils {
             }
         }).join("");
         
-        return nav.length ? `<h3>${heading}</h3><ul>${itemsNav}</ul>` : "";
+        return nav.length ? `<h3>${heading}</h3><ul>${nav}</ul>` : "";
     }
 }
 
