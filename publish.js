@@ -63,7 +63,7 @@ class PublishUtils {
         for (let child of children) {
             fs.writeFileSync(
                 path.join(outdir, helper.tutorialToUrl(child.name)),
-                helper.resolveLinks(view.render("tutorial.tmpl", {
+                helper.resolveLinks(view.render("masters/tutorial.tmpl", {
                     title: `Tutorial: ${child.title}`,
                     header: child.title,
                     content: child.parse(),
