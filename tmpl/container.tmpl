@@ -32,9 +32,9 @@ docs.forEach(function(doc, i) {
             <div class="container-overview">
                 <?js if (doc.kind === "module" && doc.modules) { ?>
                     <?js if (doc.description) { ?><div class="description"><?js= doc.description ?></div><?js } ?>
-                    <?js doc.modules.forEach(function(module) { ?><?js= self.partial("method.tmpl", module) ?><?js }) ?>
+                    <?js doc.modules.forEach(function(module) { ?><?js= self.partial("partials/method.tmpl", module) ?><?js }) ?>
                 <?js } else if (doc.kind === "class" || (doc.kind === "namespace" && doc.signature)) { ?>
-                    <?js= self.partial("method.tmpl", doc) ?>
+                    <?js= self.partial("partials/method.tmpl", doc) ?>
                 <?js } else { ?>
                     <?js if (doc.description) { ?><div class="description"><?js= doc.description ?></div><?js } ?>
                     <?js= self.partial("partials/details.tmpl", doc) ?>
@@ -117,7 +117,7 @@ docs.forEach(function(doc, i) {
                 if (members && members.length && members.forEach) {
             ?>
                 <h3 class="subsection-title">Members</h3>
-                <?js members.forEach(function(p) { ?><?js= self.partial("members.tmpl", p) ?><?js }); ?>
+                <?js members.forEach(function(p) { ?><?js= self.partial("partials/members.tmpl", p) ?><?js }); ?>
             <?js } ?>
 
             <?js
@@ -125,7 +125,7 @@ docs.forEach(function(doc, i) {
                 if (methods && methods.length && methods.forEach) {
             ?>
                 <h3 class="subsection-title">Methods</h3>
-                <?js methods.forEach(function(m) { ?><?js= self.partial("method.tmpl", m) ?><?js }); ?>
+                <?js methods.forEach(function(m) { ?><?js= self.partial("partials/method.tmpl", m) ?><?js }); ?>
             <?js } ?>
 
             <?js
@@ -135,9 +135,9 @@ docs.forEach(function(doc, i) {
                 <h3 class="subsection-title">Type Definitions</h3>
                 <?js typedefs.forEach(function(e) { ?>
                     <?js if (e.signature) { ?>
-                        <?js= self.partial("method.tmpl", e) ?>
+                        <?js= self.partial("partials/method.tmpl", e) ?>
                     <?js } else { ?>
-                        <?js= self.partial("members.tmpl", e) ?>
+                        <?js= self.partial("partials/members.tmpl", e) ?>
                     <?js } ?>
                 <?js }); ?>
             <?js } ?>
@@ -147,7 +147,7 @@ docs.forEach(function(doc, i) {
                 if (events && events.length && events.forEach) {
             ?>
                 <h3 class="subsection-title">Events</h3>
-                <?js events.forEach(function(e) { ?><?js= self.partial("method.tmpl", e) ?><?js }); ?>
+                <?js events.forEach(function(e) { ?><?js= self.partial("partials/method.tmpl", e) ?><?js }); ?>
             <?js } ?>
         </article>
     </section>
