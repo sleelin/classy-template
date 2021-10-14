@@ -10,10 +10,7 @@
     <div class="description"><?js= obj.description ?></div>
 <?js } ?>
 
-<?js if (obj.augments && obj?.alias?.indexOf("module:") === 0) { ?>
-    <h5>Extends:</h5>
-    <?js= this.partial("tags/augments.tmpl", obj) ?>
-<?js } ?>
+<?js if (obj?.alias?.indexOf("module:") === 0) { ?><?js= this.partial("tags/augments.tmpl", obj) ?><?js } ?>
 
 <?js if (obj.kind === "event" && obj?.type?.names) { ?>
     <h5>Type:</h5>
@@ -29,8 +26,8 @@
     </ul>
 <?js } ?>
 
-<?js= this.partial("tags/params.tmpl", obj) ?>
 <?js= this.partial("partials/details.tmpl", obj) ?>
+<?js= this.partial("tags/params.tmpl", obj) ?>
 
 <?js if (obj.kind !== "module" && obj?.requires?.length) { ?>
     <h5>Requires:</h5>

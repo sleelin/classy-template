@@ -1,4 +1,3 @@
-<?js= this.partial("tags/properties.tmpl", obj) ?>
 <dl class="details">
     <?js if (obj.version) { ?>
         <dt class="tag-version">Version:</dt>
@@ -26,6 +25,8 @@
             </ul>
         </dd>
     <?js } ?>
+
+    <?js= this.partial("tags/augments.tmpl", obj) ?>
 
     <?js if (obj.overrides) { ?>
         <dt class="tag-overrides">Overrides:</dt>
@@ -154,3 +155,4 @@
         </dd>
     <?js } ?>
 </dl>
+<?js= this.partial("tags/properties.tmpl", obj) ?>

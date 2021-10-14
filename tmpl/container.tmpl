@@ -2,7 +2,7 @@
 var self = this;
 var isGlobalPage;
 
-docs.forEach(function(doc, i) {
+docs.forEach((doc) => {
     // we only need to check this once
     if (typeof isGlobalPage === "undefined") isGlobalPage = (doc.kind === "globalobj"); 
 ?>
@@ -41,11 +41,6 @@ docs.forEach(function(doc, i) {
                     <?js= self.partial("tags/examples.tmpl", doc) ?>
                 <?js } ?>
             </div>
-
-            <?js if (doc.augments && doc.augments.length) { ?>
-                <h3 class="subsection-title">Extends</h3>
-                <?js= self.partial("tags/augments.tmpl", doc) ?>
-            <?js } ?>
 
             <?js if (doc.requires && doc.requires.length) { ?>
                 <h3 class="subsection-title">Requires</h3>
