@@ -104,7 +104,4 @@
     <?js } ?>
 <?js } ?>
 
-<?js if (obj?.examples?.length) { ?>
-    <h5>Example<?js= obj.examples.length > 1 ? "s" : "" ?></h5>
-    <?js= this.partial("tags/examples.tmpl", obj.examples) ?>
-<?js } ?>
+<?js= this.partial("tags/examples.tmpl", obj) ?>

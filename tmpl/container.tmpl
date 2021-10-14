@@ -38,10 +38,7 @@ docs.forEach(function(doc, i) {
                 <?js } else { ?>
                     <?js if (doc.description) { ?><div class="description"><?js= doc.description ?></div><?js } ?>
                     <?js= self.partial("partials/details.tmpl", doc) ?>
-                    <?js if (doc.examples && doc.examples.length) { ?>
-                        <h3>Example<?js= doc.examples.length > 1 ? "s" : "" ?></h3>
-                        <?js= self.partial("tags/examples.tmpl", doc.examples) ?>
-                    <?js } ?>
+                    <?js= self.partial("tags/examples.tmpl", doc) ?>
                 <?js } ?>
             </div>
 
