@@ -64,10 +64,10 @@
     <h5>Modifies:</h5>
     <?js if (obj.modifies.length > 1) { ?>
         <ul>
-            <?js obj.modifies.forEach((m) => { ?><li><?js= this.partial("modifies.tmpl", m) ?></li><?js }); ?>
+            <?js obj.modifies.forEach((m) => { ?><li><?js= this.partial("tags/modifies.tmpl", m) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js obj.modifies.forEach((m) => { ?><?js= this.partial("modifies.tmpl", m) ?><?js }); ?>
+        <?js obj.modifies.forEach((m) => { ?><?js= this.partial("tags/modifies.tmpl", m) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
