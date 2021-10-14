@@ -1,6 +1,5 @@
-<?js var self = this; ?>
-<?js if (obj.augments && obj.augments.length) { ?>
+<?js if (obj?.augments?.length) { ?>
     <ul>
-        <?js obj.augments.forEach(function(a) { ?><li><?js= self.linkto(a, a) ?></li><?js }) ?>
+        <?js obj.augments.forEach((a) => { ?><li><?js= this.linkto(a, a) ?></li><?js }) ?>
     </ul>
 <?js } ?>
