@@ -75,10 +75,10 @@
     <h5>Throws:</h5>
     <?js if (obj.exceptions.length > 1) { ?>
         <ul>
-            <?js obj.exceptions.forEach((r) => { ?><li><?js= this.partial("exceptions.tmpl", r) ?></li><?js }); ?>
+            <?js obj.exceptions.forEach((r) => { ?><li><?js= this.partial("tags/exceptions.tmpl", r) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js obj.exceptions.forEach((r) => { ?><?js= this.partial("exceptions.tmpl", r) ?><?js }); ?>
+        <?js obj.exceptions.forEach((r) => { ?><?js= this.partial("tags/exceptions.tmpl", r) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
