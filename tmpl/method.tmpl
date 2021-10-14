@@ -86,10 +86,10 @@
     <h5>Returns:</h5>
     <?js if (obj.returns.length > 1) { ?>
         <ul>
-            <?js obj.returns.forEach((r) => { ?><li><?js= this.partial("returns.tmpl", r) ?></li><?js }); ?>
+            <?js obj.returns.forEach((r) => { ?><li><?js= this.partial("tags/returns.tmpl", r) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js obj.returns.forEach((r) => { ?><?js= this.partial("returns.tmpl", r) ?><?js }); ?>
+        <?js obj.returns.forEach((r) => { ?><?js= this.partial("tags/returns.tmpl", r) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
@@ -97,10 +97,10 @@
     <h5>Yields:</h5>
     <?js if (obj.yields.length > 1) { ?>
         <ul>
-            <?js obj.yields.forEach((r) => { ?><li><?js= this.partial("returns.tmpl", r) ?></li><?js }); ?>
+            <?js obj.yields.forEach((r) => { ?><li><?js= this.partial("tags/returns.tmpl", r) ?></li><?js }); ?>
         </ul>
     <?js } else { ?>
-        <?js obj.yields.forEach((r) => { ?><?js= this.partial("returns.tmpl", r) ?><?js }); ?>
+        <?js obj.yields.forEach((r) => { ?><?js= this.partial("tags/returns.tmpl", r) ?><?js }); ?>
     <?js } ?>
 <?js } ?>
 
