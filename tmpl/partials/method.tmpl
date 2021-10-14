@@ -57,16 +57,7 @@
     </ul>
 <?js } ?>
 
-<?js if (obj?.modifies?.length) { ?>
-    <h5>Modifies:</h5>
-    <?js if (obj.modifies.length > 1) { ?>
-        <ul>
-            <?js obj.modifies.forEach((m) => { ?><li><?js= this.partial("tags/modifies.tmpl", m) ?></li><?js }); ?>
-        </ul>
-    <?js } else { ?>
-        <?js obj.modifies.forEach((m) => { ?><?js= this.partial("tags/modifies.tmpl", m) ?><?js }); ?>
-    <?js } ?>
-<?js } ?>
+<?js= this.partial("tags/modifies.tmpl", obj) ?>
 
 <?js if (obj?.exceptions?.length) { ?>
     <h5>Throws:</h5>
@@ -79,26 +70,6 @@
     <?js } ?>
 <?js } ?>
 
-<?js if (obj.returns && returns.length) { ?>
-    <h5>Returns:</h5>
-    <?js if (obj.returns.length > 1) { ?>
-        <ul>
-            <?js obj.returns.forEach((r) => { ?><li><?js= this.partial("tags/returns.tmpl", r) ?></li><?js }); ?>
-        </ul>
-    <?js } else { ?>
-        <?js obj.returns.forEach((r) => { ?><?js= this.partial("tags/returns.tmpl", r) ?><?js }); ?>
-    <?js } ?>
-<?js } ?>
-
-<?js if (obj?.yields?.length) { ?>
-    <h5>Yields:</h5>
-    <?js if (obj.yields.length > 1) { ?>
-        <ul>
-            <?js obj.yields.forEach((r) => { ?><li><?js= this.partial("tags/returns.tmpl", r) ?></li><?js }); ?>
-        </ul>
-    <?js } else { ?>
-        <?js obj.yields.forEach((r) => { ?><?js= this.partial("tags/returns.tmpl", r) ?><?js }); ?>
-    <?js } ?>
-<?js } ?>
-
+<?js= this.partial("tags/returns.tmpl", {title: "Returns:", items: obj.returns}) ?>
+<?js= this.partial("tags/returns.tmpl", {title: "Yields:", items: obj.yields}) ?>
 <?js= this.partial("tags/examples.tmpl", obj) ?>

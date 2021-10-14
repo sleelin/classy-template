@@ -1,6 +1,10 @@
-<?js if (obj?.type?.names) { ?>
-    <dl>
-        <dt>Type</dt>
-        <dd><?js= this.partial("tags/type.tmpl", obj.type.names) ?></dd>
-    </dl>
+<?js if (obj?.modifies?.length) { ?>
+    <h5>Modifies:</h5>
+    <?js if (obj.modifies.length > 1) { ?>
+        <ul>
+            <?js obj.modifies.forEach((m) => { ?><li><?js= this.partial("tags/type.tmpl", m) ?></li><?js }); ?>
+        </ul>
+    <?js } else { ?>
+        <?js obj.modifies.forEach((m) => { ?><?js= this.partial("tags/type.tmpl", m) ?><?js }); ?>
+    <?js } ?>
 <?js } ?>

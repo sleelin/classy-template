@@ -1,1 +1,8 @@
-<?js= obj.map((name) => `<span class="param-type">${this.linkto(name, this.htmlsafe(name))}</span>`).join("|") ?>
+<?js if (obj?.type?.names) { ?>
+    <dl>
+        <dt>Type</dt>
+        <dd><?js= this.partial("tags/type.tmpl", obj.type.names) ?></dd>
+    </dl>
+<?js } else if (Array.isArray(obj)) { ?>
+    <?js= obj.map((name) => `<span class="param-type">${this.linkto(name, this.htmlsafe(name))}</span>`).join("|") ?>
+<?js } ?>
