@@ -1,151 +1,20 @@
 <dl class="details">
-    <?js if (obj.version) { ?>
-        <dt class="tag-version">Version:</dt>
-        <dd class="tag-version">
-            <ul class="dummy">
-                <li><?js= obj.version ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj.since) { ?>
-        <dt class="tag-since">Since:</dt>
-        <dd class="tag-since">
-            <ul class="dummy">
-                <li><?js= obj.since ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj.inherited && obj.inherits && !obj.overrides) { ?>
-        <dt class="inherited-from">Inherited From:</dt>
-        <dd class="inherited-from">
-            <ul class="dummy">
-                <li><?js= this.linkto(obj.inherits, this.htmlsafe(obj.inherits)) ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
+    <?js= this.partial("tags/version.tmpl", obj) ?>
+    <?js= this.partial("tags/since.tmpl", obj) ?>
+    <?js= this.partial("tags/deprecated.tmpl", obj) ?>
+    <?js= this.partial("tags/inheritance.tmpl", obj) ?>
     <?js= this.partial("tags/augments.tmpl", obj) ?>
-
-    <?js if (obj.overrides) { ?>
-        <dt class="tag-overrides">Overrides:</dt>
-        <dd class="tag-overrides">
-            <ul class="dummy">
-                <li><?js= this.linkto(obj.overrides, this.htmlsafe(obj.overrides)) ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj?.implementations?.length) { ?>
-        <dt class="implementations">Implementations:</dt>
-        <dd class="implementations">
-            <ul>
-                <?js obj.implementations.forEach((impl) => { ?><li><?js= this.linkto(impl, this.htmlsafe(impl)) ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj?.implements?.length) { ?>
-        <dt class="implements">Implements:</dt>
-        <dd class="implements">
-            <ul>
-                <?js obj.implements.forEach((impl) => { ?><li><?js= this.linkto(impl, this.htmlsafe(impl)) ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj?.mixes?.length) { ?>
-        <dt class="mixes">Mixes In:</dt>
-        <dd class="mixes">
-            <ul>
-                <?js obj.mixes.forEach((a) => { ?><li><?js= this.linkto(a, a) ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj.deprecated) { ?>
-        <dt class="important tag-deprecated">Deprecated:</dt>
-        <dd class="<?js= obj.deprecated === true ? "yes-def tag-deprecated" : "" ?>">
-            <ul class="dummy">
-                <li><?js= obj.deprecated === true ? "Yes" : obj.deprecated ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj?.author?.length) { ?>
-        <dt class="tag-author">Author:</dt>
-        <dd class="tag-author">
-            <ul>
-                <?js obj.author.forEach((a) => { ?><li><?js= this.resolveAuthorLinks(a) ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj.copyright) { ?>
-        <dt class="tag-copyright">Copyright:</dt>
-        <dd class="tag-copyright">
-            <ul class="dummy">
-                <li><?js= obj.copyright ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj.license) { ?>
-        <dt class="tag-license">License:</dt>
-        <dd class="tag-license">
-            <ul class="dummy">
-                <li><?js= obj.license ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj.defaultvalue) {
-        var defaultObjectClass = "";
-
-        // Check if the default value is an object or array; if so, apply code highlighting
-        if (["object", "array"].includes(obj.defaultvaluetype)) {
-            obj.defaultvalue = `<pre class="prettyprint"><code>${obj.defaultvalue}</code></pre>`;
-            defaultObjectClass = ` class="object-value"`;
-        }
-    ?>
-        <dt class="tag-default">Default Value:</dt>
-        <dd class="tag-default">
-            <ul class="dummy">
-                <li<?js= defaultObjectClass ?>><?js= obj.defaultvalue ?></li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj.meta && this.outputSourceFiles) { ?>
-        <dt class="tag-source">Source:</dt>
-        <dd class="tag-source">
-            <ul class="dummy">
-                <li>
-                    <?js= this.linkto(obj.meta.shortpath, `${obj.meta.shortpath}, line ${obj.meta.lineno}`, null, "line" + meta.lineno) ?>
-                </li>
-            </ul>
-        </dd>
-    <?js } ?>
-
-    <?js if (obj?.tutorials?.length) { ?>
-        <dt class="tag-tutorial">Tutorials:</dt>
-        <dd class="tag-tutorial">
-            <ul>
-                <?js obj.tutorials.forEach((t) => { ?><li><?js= this.tutoriallink(t) ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
-
+    <?js= this.partial("tags/overrides.tmpl", obj) ?>
+    <?js= this.partial("tags/implementations.tmpl", obj) ?>
+    <?js= this.partial("tags/implements.tmpl", obj) ?>
+    <?js= this.partial("tags/mixes.tmpl", obj) ?>
+    <?js= this.partial("tags/author.tmpl", obj) ?>
+    <?js= this.partial("tags/copyright.tmpl", obj) ?>
+    <?js= this.partial("tags/license.tmpl", obj) ?>
+    <?js= this.partial("tags/default.tmpl", obj) ?>
+    <?js= this.partial("tags/source.tmpl", obj) ?>
+    <?js= this.partial("tags/tutorial.tmpl", obj) ?>
     <?js= this.partial("tags/see.tmpl", obj) ?>
-
-    <?js if (obj?.todo?.length) { ?>
-        <dt class="tag-todo">To Do:</dt>
-        <dd class="tag-todo">
-            <ul>
-                <?js obj.todo.forEach((t) => { ?><li><?js= t ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
+    <?js= this.partial("tags/todo.tmpl", obj) ?>
 </dl>
 <?js= this.partial("tags/properties.tmpl", obj) ?>
