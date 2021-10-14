@@ -137,14 +137,7 @@
         </dd>
     <?js } ?>
 
-    <?js if (obj?.see?.length) { ?>
-        <dt class="tag-see">See:</dt>
-        <dd class="tag-see">
-            <ul>
-                <?js obj.see.forEach((s) => { ?><li><?js= this.linkto(s) ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
+    <?js= this.partial("tags/see.tmpl", obj) ?>
 
     <?js if (obj?.todo?.length) { ?>
         <dt class="tag-todo">To Do:</dt>
