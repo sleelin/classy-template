@@ -86,7 +86,7 @@ class PublishUtils {
     }
     
     static buildNav(members, data) {
-        let nav = [`<h2><a href="index.html">Home</a></h2>`],
+        let nav = [],
             seen = {},
             linkFns = {
                 Externals: (ln, name) =>  helper.linkto(ln, name.replace(/(^"|"$)/g, '')),

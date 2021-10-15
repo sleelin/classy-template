@@ -24,7 +24,6 @@
 
 html {
     overflow: auto;
-    background-color: #fff;
     font-size: 14px;
 }
 
@@ -32,11 +31,11 @@ body {
     font-family: 'Open Sans', sans-serif;
     line-height: 1.5;
     color: #4d4e53;
-    background-color: white;
-    margin: 0;
+    background-color: #f1f1f7;
+    margin: 60px 0 0;
     display: grid;
     grid-template-columns: auto 1fr;
-    grid-template-rows: 100vh;
+    grid-template-rows: calc(100vh - 60px);
 }
 
 a, a:visited, a:active {
@@ -48,13 +47,26 @@ a:hover {
     text-decoration: underline;
 }
 
+body > header {
+    position: fixed;
+    height: 60px;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: grid;
+    background-color: white;
+    border-bottom: 1px solid #dcdcdc;
+    align-items: center;
+    grid-auto-flow: column;
+}
+
 header {
     display: block;
     padding: 0 4px;
 }
 
 header h1, header h2, header h3, header h4 {
-    display: inline-flex;
+    display: flex;
     margin-bottom: 0;
 }
 
@@ -80,9 +92,10 @@ main {
 
 main > section {
     display: block;
-    background-color: #fff;
-    padding: 12px 24px;
-    border-bottom: 1px solid #ccc;
+    padding: 12px;
+    margin: 15px;
+    border: 1px solid #dcdcdc;
+    background: white;
 }
 
 article dl {
@@ -91,6 +104,20 @@ article dl {
 
 article img {
     max-width: 100%;
+}
+
+article article {
+    padding: 0;
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #ccc;
+    border-left: 2px solid #aaa;
+}
+
+article article > * {
+    padding-left: 12px;
+    border-left: 0.5em solid #ccc;
 }
 
 .variation {
@@ -107,8 +134,7 @@ article img {
 nav {
     display: block;
     box-sizing: border-box;
-    border-right: 1px solid #ccc;
-    padding: 0 30px 0 15px;
+    padding: 15px;
     overflow: scroll;
 }
 
@@ -236,10 +262,6 @@ tr > th:last-child {
     color: #950B02;
 }
 
-.yes-def {
-    text-indent: -1000px;
-}
-
 .type-signature {
     color: #aaa;
 }
@@ -248,8 +270,8 @@ tr > th:last-child {
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
 }
 
-.details {
-    margin-top: 14px;
+.details dl {
+    margin: 14px 0;
     border-left: 2px solid #DDD;
 }
 
