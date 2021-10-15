@@ -1,13 +1,14 @@
-<?js var multiple = obj?.items?.length > 1; ?>
-
 <?js if (obj?.items?.length) { ?>
-    <h5><?js= obj.title ?></h5>
-    <?js= (multiple ? `<ul>` : "") ?>
-        <?js obj.items.forEach((item) => { ?>
-            <?js= (multiple ? `<li>` : "") ?>
-                <?js if (item.description) {?><div class="param-desc"><?js= item.description ?></div><?js } ?>
-                <?js= this.partial("tags/type.tmpl", item) ?>
-            <?js= (multiple ? `</li>` : "") ?>
-        <?js }); ?>
-    <?js= (multiple ? `</ul>` : "") ?>
+    <section class="returns">
+        <?js var multiple = obj?.items?.length > 1; ?>
+        <h5><?js= obj.title ?></h5>
+        <?js= (multiple ? `<ul>` : "") ?>
+            <?js obj.items.forEach((item) => { ?>
+                <?js= (multiple ? `<li>` : "") ?>
+                    <?js if (item.description) {?><div class="param-desc"><?js= item.description ?></div><?js } ?>
+                    <?js= this.partial("tags/type.tmpl", item) ?>
+                <?js= (multiple ? `</li>` : "") ?>
+            <?js }); ?>
+        <?js= (multiple ? `</ul>` : "") ?>
+    </section>
 <?js } ?>

@@ -1,8 +1,8 @@
 <?js if (obj?.type?.names) { ?>
-    <dl>
-        <dt>Type</dt>
-        <dd><?js= this.partial("tags/type.tmpl", obj.type.names) ?></dd>
-    </dl>
+    <?js= this.partial("partials/definition.tmpl", {
+        title: "Type:", tag: "type", items: [obj.type.names],
+        linktoFn: (item) => (item?.length ? `<span class="signature type-signature">{${this.partial("tags/type.tmpl", Array.isArray(item) ? item : [item]).trim()}}</span>` : "")
+    }) ?>
 <?js } else if (Array.isArray(obj)) { ?>
     <?js= obj.map((name) => `<span class="param-type">${this.linkto(name, this.htmlsafe(name))}</span>`).join("|") ?>
 <?js } ?>

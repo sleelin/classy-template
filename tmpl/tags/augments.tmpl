@@ -1,15 +1,1 @@
-<?js if (obj?.augments?.length) { ?>
-    <?js if (obj?.alias?.indexOf("module:") === 0) { ?>
-        <h5 class="subsection-title">Extends:</h5>
-        <ul>
-            <?js obj.augments.forEach((a) => { ?><li><?js= this.linkto(a, a) ?></li><?js }) ?>
-        </ul>
-    <?js } else { ?>
-        <dt class="implements">Extends:</dt>
-        <dd class="implements">
-            <ul>
-                <?js obj.augments.forEach((a) => { ?><li><?js= this.linkto(a, this.htmlsafe(a)) ?></li><?js }); ?>
-            </ul>
-        </dd>
-    <?js } ?>
-<?js } ?>
+<?js= this.partial("partials/definition.tmpl", {title: "Extends:", tag: "implements", items: obj.augments}) ?>

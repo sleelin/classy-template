@@ -1,0 +1,6 @@
+<?js= this.partial("partials/definition.tmpl", {
+    title: "Throws:", tag: "exceptions", items: obj.exceptions,
+    linktoFn: (item) => ((!item?.type?.names ? "" :
+        `<span class="type-signature">{${this.partial("tags/type.tmpl", item.type.names).trim()}} </span>`)
+            + item.description ?? "")
+}) ?>

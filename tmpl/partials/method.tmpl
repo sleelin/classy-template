@@ -1,75 +1,22 @@
-<?js if (obj.kind !== "module" && !obj.hideconstructor) { ?>
-    <?js if (obj.kind === "class" && obj.classdesc) { ?><h2>Constructor</h2><?js } ?>
-    <?js if (obj.kind !== "namespace") { ?>
-        <h4 class="name" id="<?js= obj.id ?>"><?js= obj.attribs + (obj.kind === "class" ? "new " : "") + obj.name + (obj.signature || "") ?></h4>
-    <?js } ?>
-    <?js if (obj.summary) { ?><p class="summary"><?js= obj.summary ?></p><?js } ?>
-<?js } ?>
+<article>
+    <header>
+        <?js if (obj.kind !== "module" && !obj.hideconstructor) { ?>
+            <?js if (obj.kind === "class" && obj.classdesc) { ?><h2>Constructor</h2><?js } ?>
+            <?js if (obj.kind !== "namespace") { ?>
+                <h4 class="name" id="<?js= obj.id ?>"><?js= obj.attribs + (obj.kind === "class" ? "new " : "") + obj.name + (obj.signature || "") ?></h4>
+            <?js } ?>
+            <?js if (obj.summary) { ?><p class="summary"><?js= obj.summary ?></p><?js } ?>
+        <?js } ?>
 
-<?js if (obj.kind !== "module" && obj.description && !obj.hideconstructor) { ?>
-    <div class="description"><?js= obj.description ?></div>
-<?js } ?>
+        <?js if (obj.kind !== "module" && obj.description && !obj.hideconstructor) { ?>
+            <div class="description"><?js= obj.description ?></div>
+        <?js } ?>
+    </header>
 
-<?js if (obj?.alias?.indexOf("module:") === 0) { ?><?js= this.partial("tags/augments.tmpl", obj) ?><?js } ?>
-
-<?js if (obj.kind === "event" && obj?.type?.names) { ?>
-    <h5>Type:</h5>
-    <ul>
-        <li><?js= this.partial("tags/type.tmpl", obj.type.names) ?></li>
-    </ul>
-<?js } ?>
-
-<?js if (obj.this) { ?>
-    <h5>This:</h5>
-    <ul>
-        <li><?js= this.linkto(obj.this, obj.this) ?></li>
-    </ul>
-<?js } ?>
-
-<?js= this.partial("partials/details.tmpl", obj) ?>
-<?js= this.partial("tags/params.tmpl", obj) ?>
-
-<?js if (obj.kind !== "module" && obj?.requires?.length) { ?>
-    <h5>Requires:</h5>
-    <ul>
-        <?js obj.requires.forEach((r) => { ?><li><?js= this.linkto(r) ?></li><?js }); ?>
-    </ul>
-<?js } ?>
-
-<?js if (obj?.fires?.length) { ?>
-    <h5>Fires:</h5>
-    <ul>
-        <?js obj.fires.forEach((f) => { ?><li><?js= this.linkto(f) ?></li><?js }); ?>
-    </ul>
-<?js } ?>
-
-<?js if (obj?.listens?.length) { ?>
-    <h5>Listens to Events:</h5>
-    <ul>
-        <?js obj.listens.forEach((f) => { ?><li><?js= this.linkto(f) ?></li><?js }); ?>
-    </ul>
-<?js } ?>
-
-<?js if (obj?.listeners?.length) { ?>
-    <h5>Listeners of This Event:</h5>
-    <ul>
-        <?js listeners.forEach((f) => { ?><li><?js= this.linkto(f) ?></li><?js }); ?>
-    </ul>
-<?js } ?>
-
-<?js= this.partial("tags/modifies.tmpl", obj) ?>
-
-<?js if (obj?.exceptions?.length) { ?>
-    <h5>Throws:</h5>
-    <?js if (obj.exceptions.length > 1) { ?>
-        <ul>
-            <?js obj.exceptions.forEach((r) => { ?><li><?js= this.partial("tags/exceptions.tmpl", r) ?></li><?js }); ?>
-        </ul>
-    <?js } else { ?>
-        <?js obj.exceptions.forEach((r) => { ?><?js= this.partial("tags/exceptions.tmpl", r) ?><?js }); ?>
-    <?js } ?>
-<?js } ?>
-
-<?js= this.partial("tags/returns.tmpl", {title: "Returns:", items: obj.returns}) ?>
-<?js= this.partial("tags/returns.tmpl", {title: "Yields:", items: obj.yields}) ?>
-<?js= this.partial("tags/examples.tmpl", obj) ?>
+    <?js= this.partial("partials/details.tmpl", obj) ?>
+    <?js= this.partial("tags/params.tmpl", obj) ?>
+    <?js= this.partial("tags/modifies.tmpl", obj) ?>
+    <?js= this.partial("tags/returns.tmpl", {title: "Returns:", items: obj.returns}) ?>
+    <?js= this.partial("tags/returns.tmpl", {title: "Yields:", items: obj.yields}) ?>
+    <?js= this.partial("tags/examples.tmpl", obj) ?>
+</article>
