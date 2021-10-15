@@ -8,6 +8,7 @@ const JSDocPath = require("jsdoc/path");
 const JSDocTemplate = require("jsdoc/template").Template;
 const JSDocFilter = require("jsdoc/src/filter").Filter;
 const JSDocScanner = require("jsdoc/src/scanner").Scanner;
+const {JSDOM} = require("jsdom");
 
 let outdir = path.normalize(env.opts.destination);
 let view;
@@ -486,12 +487,16 @@ exports.publish = (data, opts, tutorials) => {
     let members = Object.assign(helper.getMembers(data), {tutorials: tutorials.children});
     view.nav = PublishUtils.buildNav(members, data);
     
+    // Extract the main page title from the readme
+    let readme = opts.readme && JSDOM.fragment(opts.readme),
+        heading = (!readme ? "Home" : readme.removeChild(readme.querySelector("h1")).textContent);
+    
     // Index page displays information from package.json and lists files
     pages.unshift(...[
         ...(members.globals.length ? [new DocletPage({name: "Global", longname: globalUrl}, [{kind: "globalobj"}])] : []),
-        new DocletPage({name: "Home", longname: indexUrl}, [
+        new DocletPage({name: heading, longname: indexUrl}, [
             ...data({kind: "package"}).get(),
-            ...[{kind: "mainpage", readme: opts.readme, longname: (opts.mainpagetitle) ? opts.mainpagetitle : "Main Page"}],
+            ...[{kind: "mainpage", readme: [...readme?.children || []].map(n => n.outerHTML).join("\n"), longname: (opts.mainpagetitle) ? opts.mainpagetitle : "Main Page"}],
             ...data({kind: "file"}).get()
         ])
     ]);
