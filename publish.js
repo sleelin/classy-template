@@ -14,7 +14,7 @@ let outdir = path.normalize(env.opts.destination);
 let view;
 
 class PublishUtils {
-    static bootstrapTemplate(templatePath, layoutFile, data, sourceFiles) {
+    static bootstrapTemplate(templatePath, layoutFile, data, packageData, sourceFiles) {
         return Object.assign(new JSDocTemplate(path.join(templatePath, "tmpl")), {
             layout: !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile)),
             find: (spec) => data(spec).get(),
@@ -22,6 +22,7 @@ class PublishUtils {
             resolveAuthorLinks: helper.resolveAuthorLinks,
             tutoriallink: PublishUtils.linkTutorial,
             htmlsafe: helper.htmlsafe,
+            packageData: packageData,
             sourceFiles: sourceFiles
         });
     }
@@ -467,7 +468,7 @@ exports.publish = (data, opts, tutorials) => {
     JSDocFS.mkPath(outdir);
     
     // Set up templating and handle static files
-    view = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, sourceFiles);
+    view = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, packageData, sourceFiles);
     PublishUtils.handleStatics(templatePath, conf.default.staticFiles);
     
     // Prepare all doclets for consumption
