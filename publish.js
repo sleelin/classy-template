@@ -1,9 +1,10 @@
-const util = require("util");
+const fs = require("fs");
+const path = require("path");
 const env = require("jsdoc/env");
-const fs = require("jsdoc/fs");
 const helper = require("jsdoc/util/templateHelper");
 const logger = require("jsdoc/util/logger");
-const path = require("jsdoc/path");
+const JSDocFS = require("jsdoc/fs");
+const JSDocPath = require("jsdoc/path");
 const JSDocTemplate = require("jsdoc/template").Template;
 const JSDocFilter = require("jsdoc/src/filter").Filter;
 const JSDocScanner = require("jsdoc/src/scanner").Scanner;
@@ -12,22 +13,22 @@ let outdir = path.normalize(env.opts.destination);
 let view;
 
 class PublishUtils {
-    static bootstrapTemplate(templatePath, layoutFile, data, outputSourceFiles) {
+    static bootstrapTemplate(templatePath, layoutFile, data, sourceFiles) {
         return Object.assign(new JSDocTemplate(path.join(templatePath, "tmpl")), {
-            layout: !layoutFile ? "layout.tmpl" : path.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile)),
+            layout: !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile)),
             find: (spec) => data(spec).get(),
             linkto: helper.linkto,
             resolveAuthorLinks: helper.resolveAuthorLinks,
             tutoriallink: PublishUtils.linkTutorial,
             htmlsafe: helper.htmlsafe,
-            outputSourceFiles: outputSourceFiles
+            sourceFiles: sourceFiles
         });
     }
     
     static handleStatics(templatePath, configStatics) {
         // Get list of files to copy from template's static directory
         let fromDir = path.join(templatePath, "static"),
-            staticFiles = fs.ls(fromDir, 3).map(fn => ({fileName: fn, fromDir: fromDir}));
+            staticFiles = JSDocFS.ls(fromDir, 3).map(fn => ({fileName: fn, fromDir: fromDir}));
         
         // Get list of user-specified static files to copy
         if (configStatics) {
@@ -42,16 +43,16 @@ class PublishUtils {
                 // Add the static file to the list
                 staticFiles.push(...staticFileScanner
                     .scan([fromDir], 10, staticFileFilter)
-                    .map(fn => ({fileName: fn, fromDir: fs.toDir(fromDir)})));
+                    .map(fn => ({fileName: fn, fromDir: JSDocFS.toDir(fromDir)})));
             }
         }
         
         // Actually go through and copy the static files
         for (let {fileName, fromDir} of staticFiles) {
-            const toDir = fs.toDir(fileName.replace(fromDir, outdir));
+            const toDir = JSDocFS.toDir(fileName.replace(fromDir, outdir));
             
-            fs.mkPath(toDir);
-            fs.copyFileSync(fileName, toDir);
+            JSDocFS.mkPath(toDir);
+            JSDocFS.copyFileSync(fileName, toDir);
         }
     }
     
@@ -143,6 +144,51 @@ class PublishUtils {
         }).join("");
         
         return nav.length ? `<h3>${heading}</h3><ul>${nav}</ul>` : "";
+    }
+    
+    static getRepository(packagePath, repository) {
+        // Break if package.json or repository are undefined
+        if (!repository || !packagePath) return {};
+        
+        // Only look for .git folders next to specified package.json
+        let gitDir = path.join(path.dirname(path.resolve(env.pwd, packagePath)), ".git");
+        
+        // Only continue if git dir exists
+        if (fs.existsSync(gitDir)) {
+            try {
+                let ref = fs.readFileSync(path.join(gitDir, "HEAD"), "utf8").replace("ref: ", "").trim(),
+                    commitish = fs.readFileSync(path.join(gitDir, ref), "utf8").trim();
+                
+                return PublishUtils.resolveGitHost(repository, commitish) ?? {};
+            } catch (ex) {
+                // Do nothing, repository can't be resolved
+            }
+        }
+        
+        return {};
+    }
+    
+    // Map common Git hosts to their source file path link format and line tag prefix
+    static #gitHosts = {
+        github: (path, commitish) => ({path: `https://github.com/${path}/blob/${commitish}/`, line: "L"}),
+        bitbucket: (path, commitish) => ({path: `https://bitbucket.org/${path}/src/${commitish}/`, line: "line-"}),
+        gitlab: (path, commitish) => ({path: `https://gitlab.com/${path}/blob/${commitish}/`, line: "L"})
+    }
+    
+    static resolveGitHost(repository, commitish) {
+        if (typeof repository === "string") {
+            // Get repository details if specified in short form
+            let [host, repo = host] = repository.split(":");
+            
+            // Get the host's path details as above
+            return PublishUtils.#gitHosts[host === repo ? "github" : host](repo, commitish);
+        } else if (repository?.type === "git" && !!repository?.url) {
+            // Extract git host and repository details from full link
+            let target = new URL(repository.url.replace(/^(?:git\+)?(.*?)(?:\.git)?$/, "$1"));
+            
+            // Then try again with a string value instead
+            return PublishUtils.resolveGitHost(`${target.host.split(".").shift()}:${target.pathname.substring(1)}`, commitish);
+        }
     }
 }
 
@@ -354,18 +400,24 @@ class DocletPage {
         }
     }
     
-    static sources(doclets, gitPath = false, encoding = "utf8") {
-        let pages = [];
+    static sources(doclets, {_: files, encoding = "utf8"}, repositoryPath = false) {
+        let pages = [],
+            // Get the real prefix of the source files, as JSDoc strips it!
+            realPrefix = files.reduce((prefix, file) => (!prefix ? file : prefix.split("").filter((c, i) => c === file[i]).join("")));
         
         if (!!doclets && DocletPage.#sources.size > 0) {
-            let prefix = path.commonPrefix([...DocletPage.#sources.keys()]);
+            // Find common full path prefix to replace
+            let commonPrefix = JSDocPath.commonPrefix([...DocletPage.#sources.keys()]);
             
             for (let file of [...DocletPage.#sources.values()]) {
-                file.shortened = file.resolved.replace(prefix, "").replace(/\\/g, "/");
-                helper.registerLink(file.shortened, helper.getUniqueFilename(file.shortened));
+                // Add the shortened path and register the link
+                file.shortened = file.resolved.replace(commonPrefix, realPrefix).replace(/\\/g, "/");
+                helper.registerLink(file.shortened, !!repositoryPath ? `${repositoryPath}${file.shortened}` : helper.getUniqueFilename(file.shortened));
                 
-                if (!gitPath) {
+                // If repository path not specified, assume pages must be generated for source files
+                if (!repositoryPath) {
                     try {
+                        // So attempt to do that
                         let doclet = {kind: "source", name: file.shortened, longname: file.shortened},
                             docs = [{kind: "source", code: helper.htmlsafe(fs.readFileSync(file.resolved, encoding))}];
                         
@@ -377,6 +429,7 @@ class DocletPage {
             }
         
             for (let doclet of doclets) {
+                // Update the short path for all doclets
                 if (doclet.meta && DocletPage.#sources.has(doclet.meta.source)) {
                     doclet.meta.shortpath = DocletPage.#sources.get(doclet.meta.source).shortened;
                 }
@@ -395,10 +448,14 @@ class DocletPage {
 exports.publish = (data, opts, tutorials) => {
     let templatePath = path.normalize(opts.template),
         conf = Object.assign(env.conf.templates || {}, {default: env.conf.templates.default || {}}),
+        packageData = data({kind: "package"}).first(),
+        sourceFiles = {
+            output: conf?.default?.outputSourceFiles !== false, line: "line",
+            ...PublishUtils.getRepository(opts.package, packageData.repository)
+        },
         // Claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
         globalUrl = helper.getUniqueFilename("global"),
         indexUrl = helper.getUniqueFilename("index"),
-        outputSourceFiles = conf?.default?.outputSourceFiles !== false,
         pages = [];
     
     // Get things ready
@@ -406,10 +463,10 @@ exports.publish = (data, opts, tutorials) => {
     helper.setTutorials(tutorials);
     helper.registerLink("global", globalUrl);
     helper.addEventListeners(data);
-    fs.mkPath(outdir);
+    JSDocFS.mkPath(outdir);
     
     // Set up templating and handle static files
-    view = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, outputSourceFiles);
+    view = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, sourceFiles);
     PublishUtils.handleStatics(templatePath, conf.default.staticFiles);
     
     // Prepare all doclets for consumption
@@ -422,7 +479,7 @@ exports.publish = (data, opts, tutorials) => {
         ...data({kind: DocletPage.types}).get()
             .map(doclet => new DocletPage(doclet, data({longname: doclet.longname}).get())),
         // ...as well as any corresponding source files, if enabled, and gitPath not specified
-        ...(outputSourceFiles ? DocletPage.sources(data().get(), false, opts.encoding) : [])
+        ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, sourceFiles.path) : [])
     ]);
     
     // TODO: unique nav for each page (to highlight active link)

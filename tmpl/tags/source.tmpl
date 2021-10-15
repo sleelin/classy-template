@@ -1,3 +1,4 @@
 <?js= this.partial("partials/definition.tmpl", {
-    title: "Source:", tag: "source", items: obj.meta && this.outputSourceFiles, linktoFn: () => this.linkto(obj.meta.shortpath, `${obj.meta.shortpath}, line ${obj.meta.lineno}`, null, "line" + obj.meta.lineno)
+    title: "Source:", tag: "source", items: obj.meta && this.sourceFiles.output,
+    linktoFn: () => this.linkto(obj.meta.shortpath, `${obj.meta.shortpath}, line ${obj.meta.lineno}`, null, this.sourceFiles.line + obj.meta.lineno)
 }) ?>
