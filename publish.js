@@ -27,15 +27,15 @@ class PublishUtils {
         });
     }
     
-    static handleStatics(templatePath, configStatics) {
+    static handleStatics(templatePath, defaultStatics, classyStatics) {
         // Get list of files to copy from template's static directory
         let fromDir = path.join(templatePath, "static"),
-            staticFiles = JSDocFS.ls(fromDir, 3).map(fn => ({fileName: fn, fromDir: fromDir}));
+            staticFiles = JSDocFS.ls(fromDir, 3).map(fn => ({sourcePath: fn, fromDir: fromDir}));
         
         // Get list of user-specified static files to copy
-        if (configStatics) {
-            let {paths, include: staticFilePaths = (paths || [])} = configStatics|| {},
-                staticFileFilter = new JSDocFilter(configStatics),
+        if (defaultStatics) {
+            let {paths, include: staticFilePaths = (paths || [])} = defaultStatics || {},
+                staticFileFilter = new JSDocFilter(defaultStatics),
                 staticFileScanner = new JSDocScanner();
             
             // Go through user-specified static files
@@ -45,16 +45,29 @@ class PublishUtils {
                 // Add the static file to the list
                 staticFiles.push(...staticFileScanner
                     .scan([fromDir], 10, staticFileFilter)
-                    .map(fn => ({fileName: fn, fromDir: JSDocFS.toDir(fromDir)})));
+                    .map(fn => ({sourcePath: fn, fromDir: JSDocFS.toDir(fromDir)})));
+            }
+        }
+        
+        // Copy static assets from
+        if (classyStatics) {
+            let {logo} = classyStatics;
+            
+            if (typeof logo === "string") {
+                staticFiles.push({
+                    sourcePath: path.resolve(env.pwd, logo),
+                    fileName: `assets/logo${path.extname(logo)}`,
+                    fromDir: JSDocFS.toDir(path.dirname(path.resolve(env.pwd, logo)))
+                });
             }
         }
         
         // Actually go through and copy the static files
-        for (let {fileName, fromDir} of staticFiles) {
-            const toDir = JSDocFS.toDir(fileName.replace(fromDir, outdir));
+        for (let {sourcePath, fromDir, fileName} of staticFiles) {
+            const toDir = JSDocFS.toDir(sourcePath.replace(fromDir, path.join(outdir, "static")));
             
-            JSDocFS.mkPath(toDir);
-            JSDocFS.copyFileSync(fileName, toDir);
+            JSDocFS.mkPath(path.join(toDir, path.dirname(fileName ?? "")));
+            JSDocFS.copyFileSync(sourcePath, toDir, fileName);
         }
     }
     
@@ -405,7 +418,9 @@ class DocletPage {
     static sources(doclets, {_: files, encoding = "utf8"}, repositoryPath = false) {
         let pages = [],
             // Get the real prefix of the source files, as JSDoc strips it!
-            realPrefix = files.reduce((prefix, file) => (!prefix ? file : prefix.split("").filter((c, i) => c === file[i]).join("")));
+            realPrefix = files
+                .reduce((prefix, file) => (!prefix ? file : prefix.split("").filter((c, i) => c === file[i]).join("")))
+                .replace(/\\/g, "/");
         
         if (!!doclets && DocletPage.#sources.size > 0) {
             // Find common full path prefix to replace
@@ -413,7 +428,7 @@ class DocletPage {
             
             for (let file of [...DocletPage.#sources.values()]) {
                 // Add the shortened path and register the link
-                file.shortened = file.resolved.replace(commonPrefix, realPrefix).replace(/\\/g, "/");
+                file.shortened = file.resolved.replace(commonPrefix, realPrefix + (realPrefix.endsWith("/") ? "" : "/")).replace(/\\/g, "/");
                 helper.registerLink(file.shortened, !!repositoryPath ? `${repositoryPath}${file.shortened}` : helper.getUniqueFilename(file.shortened));
                 
                 // If repository path not specified, assume pages must be generated for source files
@@ -449,8 +464,15 @@ class DocletPage {
  */
 exports.publish = (data, opts, tutorials) => {
     let templatePath = path.normalize(opts.template),
-        conf = Object.assign(env.conf.templates || {}, {default: env.conf.templates.default || {}}),
-        packageData = data({kind: "package"}).first(),
+        conf = Object.assign(
+            env.conf.templates || {},
+            {default: env.conf.templates.default || {}},
+            {classy: env.conf.templates.classy || {}}
+        ),
+        packageData = Object.assign(
+            data({kind: "package"}).first(),
+            (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {})
+        ),
         sourceFiles = {
             output: conf?.default?.outputSourceFiles !== false, line: "line",
             ...PublishUtils.getRepository(opts.package, packageData.repository)
@@ -469,7 +491,7 @@ exports.publish = (data, opts, tutorials) => {
     
     // Set up templating and handle static files
     view = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, packageData, sourceFiles);
-    PublishUtils.handleStatics(templatePath, conf.default.staticFiles);
+    PublishUtils.handleStatics(templatePath, conf.default.staticFiles, conf.classy);
     
     // Prepare all doclets for consumption
     DocletPage.restructure(data({scope: "global", kind: DocletPage.types}).get(), data);

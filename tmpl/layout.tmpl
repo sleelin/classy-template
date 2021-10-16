@@ -4,17 +4,23 @@
 <head>
     <meta charset="utf-8">
     <title>JSDoc: <?js= title ?></title>
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <script src="static/scripts/prettify/prettify.js"></script>
+    <script src="static/scripts/prettify/lang-css.js"></script>
+    <link type="text/css" rel="stylesheet" href="static/styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="static/styles/jsdoc-default.css">
 </head>
 
 <body>
     <header>
         <?js if (!!this.packageData?.name) { ?>
             <h1 class="package-details">
-                <a class="package-name" href="index.html"><?js= this.packageData.name ?></a>
+                <a class="package-name" href="index.html">
+                    <?js if (this.packageData?.logo) { ?>
+                        <img src="<?js= this.packageData.logo ?>" />
+                    <?js } else { ?>
+                        <?js= this.packageData.name ?>
+                    <?js } ?>
+                </a>
                 <span class="package-version type-signature"><?js= this.packageData.version ?></span>
             </h1>
         <?js } else { ?>
@@ -33,7 +39,7 @@
         </footer>
     </main>
     <script>prettyPrint();</script>
-    <script src="scripts/linenumber.js"></script>
+    <script src="static/scripts/linenumber.js"></script>
 </body>
 
 </html>
