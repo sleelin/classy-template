@@ -227,8 +227,9 @@ class DocletPage {
         this.docs = new Set(docs);
         this.path = doclet?.meta?.source;
         this.link = helper.createLink(doclet);
-        this.title = (DocletPage.titles[doclet.kind] || "")
+        this.heading = (DocletPage.titles[doclet.kind] || "")
             + `<span class="ancestors">${(doclet.ancestors || []).join("")}</span>` + doclet.name;
+        this.title = (DocletPage.titles[doclet.kind] || "") + doclet.name;
         
         if (!DocletPage.#sources.has(this.path)) {
             DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
@@ -478,8 +479,10 @@ exports.publish = (data, opts, tutorials) => {
             {classy: env.conf.templates.classy || {}}
         ),
         packageData = Object.assign(
-            data({kind: "package"}).first(),
-            (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {})
+            data({kind: "package"}).first() || {},
+            (conf.classy.name ? {name: conf.classy.name} : {}),
+            (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {}),
+            {showName: conf.classy.showName ?? true}
         ),
         sourceFiles = {
             output: conf?.default?.outputSourceFiles !== false, line: "line",

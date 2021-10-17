@@ -92,7 +92,6 @@ tt, code, kbd, samp {
 }
 
 .package-name {
-    text-transform: uppercase;
     text-decoration: none !important;
     height: 100%;
     box-sizing: border-box;
