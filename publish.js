@@ -259,9 +259,13 @@ class DocletPage {
         }
     }
     
-    generate(fileName) {
+    render() {
         let html = view.render("container.tmpl", Object.assign(this, {docs: [...this.docs.values()]}));
-        fs.writeFileSync(path.join(outdir, fileName || this.link), (this.#resolveLinks !== false ? helper.resolveLinks(html) : html), "utf8");
+        return (this.#resolveLinks !== false ? helper.resolveLinks(html) : html);
+    }
+    
+    generate(fileName) {
+        fs.writeFileSync(path.join(outdir, fileName || this.link), this.render(), "utf8");
     }
     
     static titles = {
@@ -305,7 +309,7 @@ class DocletPage {
         }
     }
     
-    static declare(doclets) {
+    static declare(doclets, apiEntry, indexUrl) {
         for (let doclet of doclets) {
             doclet.attribs = "";
             doclet.link = helper.createLink(doclet);
@@ -315,6 +319,10 @@ class DocletPage {
                 let {path: dir, filename: fn} = doclet.meta;
                 doclet.meta.source = dir && dir !== "null" ? path.join(dir, fn) : fn;
             }
+        }
+        
+        if (!!apiEntry && indexUrl) {
+            helper.registerLink(apiEntry, indexUrl);
         }
     }
     
@@ -495,7 +503,7 @@ exports.publish = (data, opts, tutorials) => {
     
     // Prepare all doclets for consumption
     DocletPage.restructure(data({scope: "global", kind: DocletPage.types}).get(), data);
-    DocletPage.declare(data().get());
+    DocletPage.declare(data().get(), conf.classy.apiEntry, indexUrl);
     DocletPage.inherit(data().get(), data);
     DocletPage.sign(data().get(), data);
     pages.push(...[
@@ -513,6 +521,47 @@ exports.publish = (data, opts, tutorials) => {
     // Extract the main page title from the readme
     let readme = opts.readme && JSDOM.fragment(opts.readme),
         heading = (!readme ? "Home" : readme.removeChild(readme.querySelector("h1")).textContent);
+    
+    // Find the API entry doclet (if specified) and move it to the index
+    if (!!conf.classy.apiEntry) {
+        // Find the doclet and remove it from pages - it no longer gets its own page
+        let entry = data({kind: DocletPage.types, longname: conf.classy.apiEntry}).first(),
+            index = pages.indexOf(pages.find(p => p.doclet === entry)),
+            page = (index >= 0 ? pages.splice(index, 1).pop() : false);
+        
+        if (!!page) {
+            // Render and get the inner contents of the page that would have existed
+            let content = JSDOM.fragment(JSDOM.fragment(page.render()).querySelector("main > section > header").innerHTML);
+            
+            // If there's no readme, now there is!
+            if (!readme) readme = content;
+            // Otherwise, add or replace the "API" section of the readme
+            else {
+                // See if we can find an "API" heading in the readme, and get the overview contents for insertion
+                let sectionHeading = [...readme.querySelectorAll("h1, h2, h3, h4, h5, h6")].find(h => h.innerHTML === "API"),
+                    sectionContent = content.querySelector(".container-overview");
+                
+                if (!!sectionHeading) {
+                    // The "API" heading exists, mark it as such
+                    sectionHeading.setAttribute("id", "api");
+                    // See if there's any sections following it
+                    let nextHeading = readme.querySelector("#api ~ h1, #api ~ h2, #api ~ h3, #api ~ h4, #api ~ h5, #api ~ h6");
+                    for (let node of [...readme.querySelectorAll("#api ~ *")]) {
+                        // Remove nodes between API heading and next heading (if any)
+                        if (node === nextHeading) break;
+                        else readme.removeChild(node);
+                    }
+                    
+                    // Append the contents if nothing follows, or insert between sections
+                    if (!nextHeading) readme.appendChild(sectionContent);
+                    else readme.insertBefore(sectionContent, nextHeading);
+                } else {
+                    // Much simpler, there is no "API" section yet
+                    readme.appendChild(sectionContent);
+                }
+            }
+        }
+    }
     
     // Index page displays information from package.json and lists files
     pages.unshift(...[

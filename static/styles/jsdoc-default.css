@@ -325,6 +325,10 @@ tr > th:last-child {
     color: #aaa;
 }
 
+.type-signature + p {
+    display: inline;
+}
+
 .name, .signature {
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
 }
