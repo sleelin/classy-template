@@ -199,14 +199,19 @@ nav {
 nav ul {
     font-family: 'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
     font-size: 100%;
-    padding: 0;
+    padding: 0 0 0 10px;
     margin: 0;
     list-style-type: none;
 }
 
 nav ul ul {
-    padding-left: 10px;
-    margin-bottom: 12px;
+    padding-left: 15px;
+    margin-bottom: 18px;
+    border-left: 2px solid #ddd;
+}
+
+nav ul li:not(.active) ul {
+    display: none;
 }
 
 nav ul ul ul {
@@ -215,14 +220,23 @@ nav ul ul ul {
 
 nav ul a, nav ul a:visited, nav ul a:active {
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    display: block;
 }
 
-nav ul ul a, nav ul ul a:visited, nav ul ul a:active {
+nav ul ul a:not(.active), nav ul ul a:not(.active):visited, nav ul ul a:not(.active):active {
     color: #4D4E53;
 }
 
 nav li {
     margin-bottom: 6px;
+}
+
+nav a.active {
+    color: #950B02;
+}
+
+nav > h1, nav > h2, nav > h3, nav > h4, nav > h5, nav > h6 {
+    border-bottom: 1px solid #ddd;
 }
 
 footer {

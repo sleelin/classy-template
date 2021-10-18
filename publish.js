@@ -100,16 +100,17 @@ class PublishUtils {
         return attribs.length ? helper.htmlsafe(`(${attribs.join(", ")})`) : "";
     }
     
-    static buildNav(members, data) {
+    static buildBoilerplateNav(view, data, tutorials, apiEntry) {
         let nav = [],
             seen = {},
+            members = Object.assign(helper.getMembers(data), {tutorials: tutorials}),
             linkFns = {
                 Externals: (ln, name) =>  helper.linkto(ln, name.replace(/(^"|"$)/g, '')),
                 Tutorials: (ln, name) => PublishUtils.linkTutorial(name)
             };
         
         nav.push(...[
-            PublishUtils.buildStructuredNav({scope: "global", kind: DocletPage.types}, data, seen, 3),
+            PublishUtils.buildStructuredNav({scope: "global", kind: DocletPage.types}, data, seen, 3, apiEntry),
             ...["Modules", "Namespaces", "Classes", "Interfaces", "Events", "Mixins", "Externals", "Tutorials"].map(scope =>
                 PublishUtils.buildMemberNav(members[scope.toLowerCase()], scope, scope === "Tutorials" ? {} : seen, linkFns[scope] ?? helper.linkto)),
         ]);
@@ -127,24 +128,37 @@ class PublishUtils {
             nav.push(!globalNav ? `<h3>${helper.linkto("global", "Global")}</h3>` : `<h3>Global</h3><ul>${globalNav}</ul>`);
         }
         
-        return nav.join("");
+        // Assign!
+        view.boilerplateNav = nav.join("");
     }
     
-    static buildStructuredNav(spec, data, seen, depth) {
+    static buildStructuredNav(spec, data, seen, depth, apiEntry) {
         let listContent = "",
-            items = helper.find(data, spec);
+            items = data(spec).get();
         
-        for (let item of items) {
+        if (!!apiEntry && items.length === 1 && items[0].longname === apiEntry) {
+            let item = items.pop();
             if (!(seen[item.longname])) {
-                let title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, '')),
-                    children = PublishUtils.buildStructuredNav({memberof: item.longname, kind: ["namespace", "class"]}, data, seen, depth+1);
-                
-                listContent += `<li>${((depth < 5 || children.length) ? `<h${depth}>${title}</h${depth}>` : title) + children}</li>`;
                 seen[item.longname] = true;
+                
+                listContent += `<h${depth}>API</h${depth}>`;
+                listContent += PublishUtils.buildStructuredNav({memberof: item.longname, kind: ["namespace", "class"]}, data, seen, depth + 1);
+                
+                return listContent;
             }
+        } else {
+            for (let item of items) {
+                if (!(seen[item.longname])) {
+                    let title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, '')),
+                        children = PublishUtils.buildStructuredNav({memberof: item.longname, kind: ["namespace", "class"]}, data, seen, depth + 1);
+                    
+                    listContent += `<li>${((depth < 5 || children.length) ? `<h${depth}>${title}</h${depth}>` : title) + children}</li>`;
+                    seen[item.longname] = true;
+                }
+            }
+            
+            return listContent.length ? `<ul>${listContent}</ul>` : "";
         }
-        
-        return listContent.length ? `<ul>${listContent}</ul>` : "";
     }
     
     static buildMemberNav(items, heading, seen, linktoFn) {
@@ -212,20 +226,20 @@ class DocletPage {
     static #sources = new Map();
     #resolveLinks;
     
-    constructor(doclet, children = [], resolveLinks) {
-        if (DocletPage.#pages.has(doclet)) return DocletPage.#pages.get(doclet);
+    constructor(source, children = [], resolveLinks) {
+        if (DocletPage.#pages.has(source)) return DocletPage.#pages.get(source);
         
-        DocletPage.#pages.set(doclet, this);
-        Object.assign(this, doclet);
+        DocletPage.#pages.set(source, this);
+        Object.assign(this, source);
         
         this.#resolveLinks = resolveLinks;
         this.env = env;
-        this.doclet = doclet;
-        this.path = doclet?.meta?.source;
-        this.link = helper.createLink(doclet);
-        this.heading = (DocletPage.titles[doclet.kind] ? `${DocletPage.titles[doclet.kind]}: ` : "")
-            + `<span class="ancestors">${(doclet.ancestors || []).join("")}</span>` + doclet.name;
-        this.title = (DocletPage.titles[doclet.kind] ? `${DocletPage.titles[doclet.kind]} - ` : "") + doclet.name;
+        this.doclet = source;
+        this.path = source?.meta?.source;
+        this.link = helper.createLink(source);
+        this.heading = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]}: ` : "")
+            + `<span class="ancestors">${(source.ancestors || []).join("")}</span>` + source.name;
+        this.title = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]} - ` : "") + source.name;
         this.doclets = Object.assign({}, children.reduce((members, c) => {
             if (c.kind) (members[c.kind] = members[c.kind] || []).push(c);
             return members;
@@ -235,7 +249,7 @@ class DocletPage {
             DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
         }
         
-        for (let doclet of children) {
+        for (let doclet of [this, ...children]) {
             if (doclet.examples) {
                 doclet.examples = doclet.examples.map((example) => {
                     let caption, code;
@@ -258,6 +272,24 @@ class DocletPage {
                 });
             }
         }
+    }
+    
+    nav(boilerplate) {
+        let nav = JSDOM.fragment(`<div id="container">${boilerplate}</div>`),
+            active = nav.querySelector(`a[href="${this.link}"]`);
+        
+        if (!!active) {
+            active.classList.add("active");
+            
+            let parent = active.parentElement;
+            
+            while (!!parent) {
+                parent.classList.add("active");
+                parent = parent.parentElement;
+            }
+        }
+        
+        return nav.querySelector("#container").innerHTML;
     }
     
     render() {
@@ -518,9 +550,8 @@ exports.publish = (data, opts, tutorials) => {
         ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, sourceFiles.path) : [])
     ]);
     
-    // TODO: unique nav for each page (to highlight active link)
-    let members = Object.assign(helper.getMembers(data), {tutorials: tutorials.children});
-    view.nav = PublishUtils.buildNav(members, data);
+    // Prepare view's common nav structure
+    PublishUtils.buildBoilerplateNav(view, data, tutorials.children, conf.classy.apiEntry);
     
     // Extract the main page title from the readme
     let readme = opts.readme && JSDOM.fragment(opts.readme),
@@ -569,7 +600,7 @@ exports.publish = (data, opts, tutorials) => {
     
     // Index page displays information from package.json and lists files
     pages.unshift(...[
-        ...(members.globals.length ? [new DocletPage({name: "Global", longname: globalUrl}, [{kind: "globalobj"}])] : []),
+        // ...(members.globals.length ? [new DocletPage({name: "Global", longname: globalUrl}, [{kind: "globalobj"}])] : []),
         new DocletPage({name: heading, longname: indexUrl, kind: "mainpage"}, [
             ...data({kind: "package"}).get(),
             ...[{kind: "readme", readme: [...readme?.children || []].map(n => n.outerHTML).join("\n"), longname: (opts.mainpagetitle) ? opts.mainpagetitle : "Main Page"}],
