@@ -121,6 +121,30 @@ tt, code, kbd, samp {
     margin: 0;
 }
 
+.overview-description {
+    margin: 1em 0;
+}
+
+.overview-description blockquote {
+    border: 1px solid #c1c7d0;
+    border-left-width: 6px;
+    color: #7a869a;
+    padding: 6px 18px 10px;
+    margin: 8px 0;
+}
+
+.overview-description blockquote p {
+    margin: 0;
+}
+
+.overview-description code {
+    padding: 3px 6px;
+    margin: 0;
+    font-size: 85%;
+    background-color: #afb8c133;
+    border-radius: 6px;
+}
+
 main {
     height: 100%;
     overflow: scroll;

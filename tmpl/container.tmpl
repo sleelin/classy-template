@@ -26,12 +26,12 @@ var isGlobalPage = (obj.kind === "globalobj");
             } ?>
             <div class="container-overview">
                 <?js if (obj.kind === "module" && obj.modules) { ?>
-                    <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
+                    <?js if (obj.description) { ?><div class="overview-description"><?js= obj.description ?></div><?js } ?>
                     <?js obj.modules.forEach((module) => { ?><?js= this.partial("partials/method.tmpl", module) ?><?js }) ?>
                 <?js } else if (obj.kind === "class" || (obj.kind === "namespace" && obj.signature)) { ?>
                     <?js= this.partial("partials/method.tmpl", obj) ?>
                 <?js } else { ?>
-                    <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
+                    <?js if (obj.description) { ?><div class="overview-description"><?js= obj.description ?></div><?js } ?>
                     <?js= this.partial("partials/details.tmpl", obj) ?>
                     <?js= this.partial("tags/examples.tmpl", obj) ?>
                 <?js } ?>
