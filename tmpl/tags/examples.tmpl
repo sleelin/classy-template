@@ -1,7 +1,11 @@
 <?js if (obj?.examples?.length) { ?>
-    <h5>Example<?js= obj.examples.length > 1 ? "s" : "" ?></h5>
-    <?js obj.examples.forEach((example) => { ?>
-        <?js if (example.caption) { ?><p class="code-caption"><?js= example.caption ?></p><?js } ?>
-        <pre class="prettyprint"><code><?js= this.htmlsafe(example.code) ?></code></pre>
-    <?js }); ?>
+    <section class="tag-examples">
+        <h5 class="subsection-title">Example<?js= obj.examples.length > 1 ? "s" : "" ?></h5>
+        <?js obj.examples.forEach((example) => { ?>
+            <article class="example">
+                <?js if (example.caption) { ?><div class="example-caption"><?js= example.caption ?></div><?js } ?>
+                <pre class="example-code prettyprint"><code><?js= this.htmlsafe(example.code) ?></code></pre>
+            </article>
+        <?js }); ?>
+    </section>
 <?js } ?>

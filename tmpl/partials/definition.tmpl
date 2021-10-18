@@ -1,12 +1,8 @@
 <?js if (Array.isArray(obj?.items) ? obj?.items?.length : obj?.items) { ?>
-    <div class="<?js= [...(Array.isArray(obj.classes) ? obj.classes : (obj.classes ? [obj.classes] : [])), ...(obj?.tag ? [`tag-${obj?.tag}`] : [])].join(" ") ?>">
+    <div class="<?js= ["detail", ...(Array.isArray(obj.classes) ? obj.classes : (obj.classes ? [obj.classes] : [])), ...(obj?.tag ? [`tag-${obj?.tag}`] : [])].join(" ") ?>">
         <dt><?js= obj.title ?></dt>
         <?js (Array.isArray(obj.items) ? obj.items : [obj.items]).forEach((item) => { ?>
-            <dd>
-                <ul class="dummy">
-                    <li><?js= obj.linktoFn ? obj.linktoFn(item) : this.linkto(item, this.htmlsafe(item)) ?></li>
-                </ul>
-            </dd>
+            <dd><?js= obj.linktoFn ? obj.linktoFn(item) : this.linkto(item, this.htmlsafe(item)) ?></dd>
         <?js }); ?>
     </div>
 <?js } ?>

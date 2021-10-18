@@ -3,11 +3,11 @@
         <h4 class="name" id="<?js= id ?>">
             <?js= obj.attribs ?><span><?js= name ?></span><?js= (obj.signature || "") ?>
         </h4>
-
         <?js if (obj.summary) { ?><p class="summary"><?js= obj.summary ?></p><?js } ?>
         <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
     </header>
-
     <?js= this.partial("partials/details.tmpl", obj) ?>
+    <?js= this.partial("tags/properties.tmpl", obj) ?>
+    <?js= this.partial("tags/params.tmpl", obj) ?>
     <?js= this.partial("tags/examples.tmpl", obj) ?>
 </article>

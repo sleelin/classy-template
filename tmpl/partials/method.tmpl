@@ -1,18 +1,10 @@
-<article>
+<article id="<?js= obj.id ?>">
     <header>
-        <?js if (obj.kind !== "module" && !obj.hideconstructor) { ?>
-            <?js if (obj.kind === "class" && obj.classdesc) { ?><h2>Constructor</h2><?js } ?>
-            <?js if (obj.kind !== "namespace") { ?>
-                <h4 class="name" id="<?js= obj.id ?>"><?js= obj.attribs + (obj.kind === "class" ? "new " : "") + obj.name + (obj.signature || "") ?></h4>
-            <?js } ?>
-            <?js if (obj.summary) { ?><p class="summary"><?js= obj.summary ?></p><?js } ?>
-        <?js } ?>
-
-        <?js if (obj.kind !== "module" && obj.description && !obj.hideconstructor) { ?>
-            <div class="description"><?js= obj.description ?></div>
-        <?js } ?>
+        <h4 class="name"><?js= obj.attribs + obj.name + (obj.signature || "") ?></h4>
+        <?js if (obj.summary) { ?><div class="summary"><?js= obj.summary ?></div><?js } ?>
+        <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
     </header>
-
+    
     <?js= this.partial("partials/details.tmpl", obj) ?>
     <?js= this.partial("tags/params.tmpl", obj) ?>
     <?js= this.partial("tags/modifies.tmpl", obj) ?>

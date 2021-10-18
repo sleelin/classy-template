@@ -93,7 +93,7 @@ class PublishUtils {
     }
     
     static typeStrings({type}) {
-        return (type?.names || []).map(name => helper.linkto(name, helper.htmlsafe(name)));
+        return (type?.names || []).map(name => helper.linkto(name, helper.htmlsafe(name))).join(", ");
     }
     
     static attribsString(attribs) {
@@ -566,7 +566,7 @@ exports.publish = (data, opts, tutorials) => {
         
         if (!!page) {
             // Render and get the inner contents of the page that would have existed
-            let content = JSDOM.fragment(JSDOM.fragment(page.render()).querySelector("main > section > header").innerHTML);
+            let content = JSDOM.fragment(JSDOM.fragment(page.render()).querySelector("main > article").innerHTML);
             
             // If there's no readme, now there is!
             if (!readme) readme = content;
