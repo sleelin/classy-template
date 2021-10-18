@@ -239,7 +239,7 @@ class DocletPage {
         this.link = helper.createLink(source);
         this.heading = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]}: ` : "")
             + `<span class="ancestors">${(source.ancestors || []).join("")}</span>` + source.name;
-        this.title = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]} - ` : "") + source.name;
+        this.title = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]} - ` : "") + source.longname;
         this.doclets = Object.assign({}, children.reduce((members, c) => {
             if (c.kind) (members[c.kind] = members[c.kind] || []).push(c);
             return members;
