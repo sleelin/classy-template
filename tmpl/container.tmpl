@@ -8,7 +8,7 @@ var isGlobalPage = (obj.kind === "globalobj");
 <?js } else if (obj.kind === "source") { ?>
     <?js= this.partial("masters/source.tmpl", obj) ?>
 <?js } else if (["class", "namespace"].includes(obj.kind)) { ?>
-    <?js= this.partial("partials/classdef.tmpl", obj) ?>
+    <?js= this.partial("masters/class.tmpl", obj) ?>
 <?js } else { ?>
     <article class="content-container">
         <header class="section-header">
