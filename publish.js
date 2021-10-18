@@ -212,30 +212,30 @@ class DocletPage {
     static #sources = new Map();
     #resolveLinks;
     
-    constructor(doclet, docs, resolveLinks) {
-        if (DocletPage.#pages.has(doclet)) {
-            let page = DocletPage.#pages.get(doclet);
-            for (let doc of docs) page.docs.add(doc);
-            return page;
-        }
+    constructor(doclet, children = [], resolveLinks) {
+        if (DocletPage.#pages.has(doclet)) return DocletPage.#pages.get(doclet);
         
         DocletPage.#pages.set(doclet, this);
+        Object.assign(this, doclet);
+        
         this.#resolveLinks = resolveLinks;
-        this.longname = doclet.longname;
         this.env = env;
         this.doclet = doclet;
-        this.docs = new Set(docs);
         this.path = doclet?.meta?.source;
         this.link = helper.createLink(doclet);
-        this.heading = (DocletPage.titles[doclet.kind] || "")
+        this.heading = (DocletPage.titles[doclet.kind] ? `${DocletPage.titles[doclet.kind]}: ` : "")
             + `<span class="ancestors">${(doclet.ancestors || []).join("")}</span>` + doclet.name;
-        this.title = (DocletPage.titles[doclet.kind] || "") + doclet.name;
+        this.title = (DocletPage.titles[doclet.kind] ? `${DocletPage.titles[doclet.kind]} - ` : "") + doclet.name;
+        this.doclets = Object.assign({}, children.reduce((members, c) => {
+            if (c.kind) (members[c.kind] = members[c.kind] || []).push(c);
+            return members;
+        }, {}));
         
         if (!DocletPage.#sources.has(this.path)) {
             DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
         }
         
-        for (let doclet of docs) {
+        for (let doclet of children) {
             if (doclet.examples) {
                 doclet.examples = doclet.examples.map((example) => {
                     let caption, code;
@@ -261,7 +261,7 @@ class DocletPage {
     }
     
     render() {
-        let html = view.render("container.tmpl", Object.assign(this, {docs: [...this.docs.values()]}));
+        let html = view.render("container.tmpl", this);
         return (this.#resolveLinks !== false ? helper.resolveLinks(html) : html);
     }
     
@@ -270,16 +270,17 @@ class DocletPage {
     }
     
     static titles = {
-        module: "Module: ",
-        class: "Class: ",
-        namespace: "Namespace: ",
-        mixin: "Mixin: ",
-        external: "External: ",
-        interface: "Interface: ",
-        source: "Source: "
+        module: "Module",
+        class: "Class",
+        namespace: "Namespace",
+        mixin: "Mixin",
+        external: "External",
+        interface: "Interface",
+        source: "Source"
     };
     
     static types = Object.keys(DocletPage.titles);
+    static members = ["member", "function", "constant", "typedef"];
     
     static restructure(doclets, data) {
         for (let doclet of doclets) {
@@ -512,7 +513,7 @@ exports.publish = (data, opts, tutorials) => {
     pages.push(...[
         // Create pages for all container-type doclets
         ...data({kind: DocletPage.types}).get()
-            .map(doclet => new DocletPage(doclet, data({longname: doclet.longname}).get())),
+            .map(doclet => new DocletPage(doclet, data({memberof: doclet.longname}).get())),
         // ...as well as any corresponding source files, if enabled, and gitPath not specified
         ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, sourceFiles.path) : [])
     ]);
@@ -529,7 +530,7 @@ exports.publish = (data, opts, tutorials) => {
     if (!!conf.classy.apiEntry) {
         // Find the doclet and remove it from pages - it no longer gets its own page
         let entry = data({kind: DocletPage.types, longname: conf.classy.apiEntry}).first(),
-            index = pages.indexOf(pages.find(p => p.doclet === entry)),
+            index = pages.indexOf(new DocletPage(entry)),
             page = (index >= 0 ? pages.splice(index, 1).pop() : false);
         
         if (!!page) {
@@ -569,9 +570,9 @@ exports.publish = (data, opts, tutorials) => {
     // Index page displays information from package.json and lists files
     pages.unshift(...[
         ...(members.globals.length ? [new DocletPage({name: "Global", longname: globalUrl}, [{kind: "globalobj"}])] : []),
-        new DocletPage({name: heading, longname: indexUrl}, [
+        new DocletPage({name: heading, longname: indexUrl, kind: "mainpage"}, [
             ...data({kind: "package"}).get(),
-            ...[{kind: "mainpage", readme: [...readme?.children || []].map(n => n.outerHTML).join("\n"), longname: (opts.mainpagetitle) ? opts.mainpagetitle : "Main Page"}],
+            ...[{kind: "readme", readme: [...readme?.children || []].map(n => n.outerHTML).join("\n"), longname: (opts.mainpagetitle) ? opts.mainpagetitle : "Main Page"}],
             ...data({kind: "file"}).get()
         ])
     ]);

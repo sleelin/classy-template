@@ -1,99 +1,84 @@
 <?js
 var self = this;
-var isGlobalPage;
-
-docs.forEach((doc) => {
-    // we only need to check this once
-    if (typeof isGlobalPage === "undefined") isGlobalPage = (doc.kind === "globalobj"); 
+var isGlobalPage = (obj.kind === "globalobj");
 ?>
-<?js if (doc.kind === "mainpage" || (doc.kind === "package")) { ?>
-    <?js= this.partial("masters/mainpage.tmpl", doc) ?>
-<?js } else if (doc.kind === "source") { ?>
-    <?js= this.partial("masters/source.tmpl", doc) ?>
+
+<?js if (obj.kind === "mainpage") { ?>
+    <?js= this.partial("masters/mainpage.tmpl", obj) ?>
+<?js } else if (obj.kind === "source") { ?>
+    <?js= this.partial("masters/source.tmpl", obj) ?>
 <?js } else { ?>
     <section>
         <header>
-            <?js if (!doc.longname || doc.kind !== "module") { ?>
+            <?js if (!obj.longname || obj.kind !== "module") { ?>
                 <h2>
-                    <?js if (doc.attribs) { ?><span class="attribs"><?js= doc.attribs ?></span><?js } ?>
-                    <?js if (doc.ancestors && doc.ancestors.length) { ?><span class="ancestors"><?js= doc.ancestors.join("") ?></span><?js } ?>
-                    <span><?js= doc.name ?></span>
-                    <?js if (doc.variation) { ?><sup class="variation"><?js= doc.variation ?></sup><?js } ?>
-                    <?js if (doc.signature && !doc.hideconstructor) { ?><?js= doc.signature ?><?js } ?>
+                    <?js if (obj.attribs) { ?><span class="attribs"><?js= obj.attribs ?></span><?js } ?>
+                    <?js if (obj.ancestors && obj.ancestors.length) { ?><span class="ancestors"><?js= obj.ancestors.join("") ?></span><?js } ?>
+                    <span><?js= obj.name ?></span>
+                    <?js if (obj.variation) { ?><sup class="variation"><?js= obj.variation ?></sup><?js } ?>
+                    <?js if (obj.signature && !obj.hideconstructor) { ?><?js= obj.signature ?><?js } ?>
                 </h2>
-                <?js if (doc.classdesc) { ?><div class="class-description"><?js= doc.classdesc ?></div><?js } ?>
-            <?js } else if (doc.kind === "module" && doc.modules) {
-                doc.modules.forEach((module) => {
+                <?js if (obj.classdesc) { ?><div class="class-description"><?js= obj.classdesc ?></div><?js } ?>
+            <?js } else if (obj.kind === "module" && obj.modules) {
+                obj.modules.forEach((module) => {
                     if (module.classdesc) { ?><div class="class-description"><?js= module.classdesc ?></div><?js } ?><?js
                 })
             } ?>
             <div class="container-overview">
-                <?js if (doc.kind === "module" && doc.modules) { ?>
-                    <?js if (doc.description) { ?><div class="description"><?js= doc.description ?></div><?js } ?>
-                    <?js doc.modules.forEach((module) => { ?><?js= this.partial("partials/method.tmpl", module) ?><?js }) ?>
-                <?js } else if (doc.kind === "class" || (doc.kind === "namespace" && doc.signature)) { ?>
-                    <?js= this.partial("partials/method.tmpl", doc) ?>
+                <?js if (obj.kind === "module" && obj.modules) { ?>
+                    <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
+                    <?js obj.modules.forEach((module) => { ?><?js= this.partial("partials/method.tmpl", module) ?><?js }) ?>
+                <?js } else if (obj.kind === "class" || (obj.kind === "namespace" && obj.signature)) { ?>
+                    <?js= this.partial("partials/method.tmpl", obj) ?>
                 <?js } else { ?>
-                    <?js if (doc.description) { ?><div class="description"><?js= doc.description ?></div><?js } ?>
-                    <?js= this.partial("partials/details.tmpl", doc) ?>
-                    <?js= this.partial("tags/examples.tmpl", doc) ?>
+                    <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
+                    <?js= this.partial("partials/details.tmpl", obj) ?>
+                    <?js= this.partial("tags/examples.tmpl", obj) ?>
                 <?js } ?>
             </div>
         </header>
         <article>
-            <?js if (doc.requires && doc.requires.length) { ?>
+            <?js if (obj?.requires?.length) { ?>
                 <h3 class="subsection-title">Requires</h3>
                 <ul>
-                    <?js doc.requires.forEach((r) => { ?><li><?js= this.linkto(r, r) ?></li><?js }); ?>
+                    <?js obj.requires.forEach((r) => { ?><li><?js= this.linkto(r, r) ?></li><?js }); ?>
                 </ul>
             <?js } ?>
 
-            <?js
-                var classes = this.find({kind: "class", memberof: doc.longname});
-                if (!isGlobalPage && classes && classes.length) {
-            ?>
+            <?js if (!isGlobalPage && obj?.doclets?.class?.length) { ?>
                 <h3 class="subsection-title">Classes</h3>
                 <dl>
-                    <?js classes.forEach((c) => { ?>
+                    <?js obj.doclets.class.forEach((c) => { ?>
                         <dt><?js= this.linkto(c.longname, c.name) ?></dt>
                         <dd><?js if (c.summary) { ?><?js= c.summary ?><?js } ?></dd>
                     <?js }); ?>
                 </dl>
             <?js } ?>
 
-            <?js
-                var interfaces = this.find({kind: "interface", memberof: doc.longname});
-                if (!isGlobalPage && interfaces && interfaces.length) {
-            ?>
+            <?js if (!isGlobalPage && obj?.doclets?.interface?.length) { ?>
                 <h3 class="subsection-title">Interfaces</h3>
                 <dl>
-                    <?js interfaces.forEach((i) => { ?>
+                    <?js obj.doclets.interface.forEach((i) => { ?>
                         <dt><?js= this.linkto(i.longname, i.name) ?></dt>
                         <dd><?js if (i.summary) { ?><?js= i.summary ?><?js } ?></dd>
                     <?js }); ?>
                 </dl>
             <?js } ?>
 
-            <?js
-                var mixins = this.find({kind: "mixin", memberof: doc.longname});
-                if (!isGlobalPage && mixins && mixins.length) {
-            ?>
+            <?js if (!isGlobalPage && obj?.doclets?.mixin?.length) { ?>
                 <h3 class="subsection-title">Mixins</h3>
                 <dl>
-                    <?js mixins.forEach((m) => { ?>
+                    <?js obj.doclets.mixin.forEach((m) => { ?>
                         <dt><?js= this.linkto(m.longname, m.name) ?></dt>
                         <dd><?js if (m.summary) { ?><?js= m.summary ?><?js } ?></dd>
                     <?js }); ?>
                 </dl>
             <?js } ?>
 
-            <?js
-                var namespaces = this.find({kind: "namespace", memberof: doc.longname});
-                if (!isGlobalPage && namespaces && namespaces.length) {
-            ?>
+            <?js if (!isGlobalPage && obj?.doclets?.namespace?.length) { ?>
                 <h3 class="subsection-title">Namespaces</h3>
                 <dl>
-                    <?js namespaces.forEach((n) => { ?>
+                    <?js obj.doclets.namespace.forEach((n) => { ?>
                         <dt><?js= this.linkto(n.longname, n.name) ?></dt>
                         <dd><?js if (n.summary) { ?><?js= n.summary ?><?js } ?></dd>
                     <?js }); ?>
@@ -101,7 +86,7 @@ docs.forEach((doc) => {
             <?js } ?>
 
             <?js
-                var members = this.find({kind: "member", memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
+                var members = obj.doclets.member;
 
                 // Symbols that are assigned to module.exports are not globals, even though they're not a memberof anything
                 if (isGlobalPage && members && members.length && members.forEach) {
@@ -116,23 +101,17 @@ docs.forEach((doc) => {
                 </section>
             <?js } ?>
 
-            <?js
-                var methods = this.find({kind: "function", memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
-                if (methods && methods.length && methods.forEach) {
-            ?>
+            <?js if (obj?.doclets?.function?.length) { ?>
                 <section>
                     <h3 class="subsection-title">Methods</h3>
-                    <?js methods.forEach((m) => { ?><?js= this.partial("partials/method.tmpl", m) ?><?js }); ?>
+                    <?js obj.doclets.function.forEach((m) => { ?><?js= this.partial("partials/method.tmpl", m) ?><?js }); ?>
                 </section>
             <?js } ?>
 
-            <?js
-                var typedefs = this.find({kind: "typedef", memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
-                if (typedefs && typedefs.length && typedefs.forEach) {
-            ?>
+            <?js if (obj?.doclets?.typedef?.length) { ?>
                 <section>
                     <h3 class="subsection-title">Type Definitions</h3>
-                    <?js typedefs.forEach((e) => { ?>
+                    <?js obj.doclets.typedef.forEach((e) => { ?>
                         <?js if (e.signature) { ?>
                             <?js= this.partial("partials/method.tmpl", e) ?>
                         <?js } else { ?>
@@ -142,16 +121,12 @@ docs.forEach((doc) => {
                 </section>
             <?js } ?>
 
-            <?js
-                var events = this.find({kind: "event", memberof: isGlobalPage ? {isUndefined: true} : doc.longname});
-                if (events && events.length && events.forEach) {
-            ?>
+            <?js if (obj?.doclets?.event?.length) { ?>
                 <section>
                     <h3 class="subsection-title">Events</h3>
-                    <?js events.forEach((e) => { ?><?js= self.partial("partials/method.tmpl", e) ?><?js }); ?>
+                    <?js obj.doclets.event.forEach((e) => { ?><?js= this.partial("partials/method.tmpl", e) ?><?js }); ?>
                 </section>
             <?js } ?>
         </article>
     </section>
-    <?js } ?>
-<?js }); ?>
+<?js } ?>
