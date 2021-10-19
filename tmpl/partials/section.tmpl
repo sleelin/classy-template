@@ -1,0 +1,27 @@
+<?js if (obj?.items?.length && obj?.title) { ?>
+    <section class="<?js= [...(Array.isArray(obj.classes) ? obj.classes : (obj.classes ? [obj.classes] : []))].join(" ") ?>">
+        <h3 class="subsection-title"><?js= obj.title ?></h3>
+        <?js if (obj.forEach && typeof obj.forEach === "function") { ?>
+            <?js obj.items.forEach((item) => { ?><?js= obj.forEach(item) ?><?js }); ?>
+        <?js } else { ?>
+            <ul class="subsection-list">
+                <?js obj.items.forEach((item) => { ?>
+                    <li>
+                        <div class="name">
+                            <code><?js= this.linkto(item.longname, item.longname) ?></code>
+                        </div>
+                        <?js if (item.summary) { ?>
+                            <?js if (item.summary.startsWith("<ul>")) { ?>
+                                <?js= item.summary ?>
+                            <?js } else { ?>
+                                <ul>
+                                    <li><?js= item.summary ?></li>
+                                </ul>
+                            <?js } ?>
+                        <?js } ?>
+                    </li>
+                <?js }); ?>
+            </ul>
+        <?js } ?>
+    </section>
+<?js } ?>

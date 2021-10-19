@@ -339,6 +339,14 @@ h6 {
     border-bottom: 1px solid #ddd;
 }
 
+.subsection-list > li {
+    margin-bottom: 1em;
+}
+
+.subsection-list > li ul {
+    margin-top: 0.5em;
+}
+
 table {
     border-spacing: 0;
     border: 0;

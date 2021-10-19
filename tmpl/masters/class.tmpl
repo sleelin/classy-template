@@ -27,41 +27,30 @@
     <?js= this.partial("partials/details.tmpl", obj) ?>
     <?js= this.partial("tags/params.tmpl", obj) ?>
     <?js= this.partial("tags/modifies.tmpl", obj) ?>
-    <?js= this.partial("tags/returns.tmpl", {title: "Returns:", items: obj.returns}) ?>
-    <?js= this.partial("tags/returns.tmpl", {title: "Yields:", items: obj.yields}) ?>
     <?js= this.partial("tags/examples.tmpl", obj) ?>
     
-    <?js if (obj?.doclets?.member?.length) { ?>
-        <section>
-            <h3 class="subsection-title">Members</h3>
-            <?js obj.doclets.member.forEach((p) => { ?><?js= this.partial("partials/members.tmpl", p) ?><?js }); ?>
-        </section>
-    <?js } ?>
+    <?js= this.partial("partials/section.tmpl", {title: "Classes", classes: "child-classes", items: obj?.doclets?.class}) ?>
+    <?js= this.partial("partials/section.tmpl", {title: "Interfaces", classes: "child-interfaces", items: obj?.doclets?.interface}) ?>
+    <?js= this.partial("partials/section.tmpl", {title: "Mixins", classes: "child-mixins", items: obj?.doclets?.mixin}) ?>
+    <?js= this.partial("partials/section.tmpl", {title: "Namespaces", classes: "child-namespaces", items: obj?.doclets?.namespace}) ?>
     
-    <?js if (obj?.doclets?.function?.length) { ?>
-        <section>
-            <h3 class="subsection-title">Methods</h3>
-            <?js obj.doclets.function.forEach((m) => { ?><?js= this.partial("partials/method.tmpl", m) ?><?js }); ?>
-        </section>
-    <?js } ?>
+    <?js= this.partial("partials/section.tmpl", {
+        title: "Members", classes: "child-members", items: obj?.doclets?.member,
+        forEach: (item) => this.partial("partials/members.tmpl", item)
+    }) ?>
     
-    <?js if (obj?.doclets?.typedef?.length) { ?>
-        <section>
-            <h3 class="subsection-title">Type Definitions</h3>
-            <?js obj.doclets.typedef.forEach((e) => { ?>
-                <?js if (e.signature) { ?>
-                    <?js= this.partial("partials/method.tmpl", e) ?>
-                <?js } else { ?>
-                    <?js= this.partial("partials/members.tmpl", e) ?>
-                <?js } ?>
-            <?js }); ?>
-        </section>
-    <?js } ?>
+    <?js= this.partial("partials/section.tmpl", {
+        title: "Methods", classes: "child-methods", items: obj?.doclets?.function,
+        forEach: (item) => this.partial("partials/method.tmpl", item)
+    }) ?>
     
-    <?js if (obj?.doclets?.event?.length) { ?>
-        <section>
-            <h3 class="subsection-title">Events</h3>
-            <?js obj.doclets.event.forEach((e) => { ?><?js= this.partial("partials/method.tmpl", e) ?><?js }); ?>
-        </section>
-    <?js } ?>
+    <?js= this.partial("partials/section.tmpl", {
+        title: "Type Definitions", classes: "child-typedefs", items: obj?.doclets?.typedef,
+        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)
+    }) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {
+        title: "Events", classes: "child-events", items: obj?.doclets?.event,
+        forEach: (item) => this.partial("partials/method.tmpl", item)
+    }) ?>
 </article>

@@ -1,8 +1,3 @@
-<?js
-var self = this;
-var isGlobalPage = (obj.kind === "globalobj");
-?>
-
 <?js if (obj.kind === "mainpage") { ?>
     <?js= this.partial("masters/mainpage.tmpl", obj) ?>
 <?js } else if (obj.kind === "source") { ?>
@@ -10,66 +5,5 @@ var isGlobalPage = (obj.kind === "globalobj");
 <?js } else if (["class", "namespace"].includes(obj.kind)) { ?>
     <?js= this.partial("masters/class.tmpl", obj) ?>
 <?js } else { ?>
-    <article class="content-container">
-        <header class="section-header">
-            <h2 class="page-title"><?js= obj.heading ?></h2>
-        </header>
-        <section>
-            <div class="container-overview">
-                <?js if (obj.kind === "module" && obj.modules) { ?>
-                    <?js if (obj.description) { ?><div class="overview-description"><?js= obj.description ?></div><?js } ?>
-                    <?js obj.modules.forEach((module) => { ?><?js= this.partial("partials/method.tmpl", module) ?><?js }) ?>
-                <?js } else if (!["class", "namespace"].includes(obj.kind)) { ?>
-                    <?js if (obj.description) { ?><div class="overview-description"><?js= obj.description ?></div><?js } ?>
-                    <?js= this.partial("partials/details.tmpl", obj) ?>
-                <?js } ?>
-            </div>
-            <?js if (obj?.requires?.length) { ?>
-                <h3 class="subsection-title">Requires</h3>
-                <ul>
-                    <?js obj.requires.forEach((r) => { ?><li><?js= this.linkto(r, r) ?></li><?js }); ?>
-                </ul>
-            <?js } ?>
-
-            <?js if (!isGlobalPage && obj?.doclets?.class?.length) { ?>
-                <h3 class="subsection-title">Classes</h3>
-                <dl>
-                    <?js obj.doclets.class.forEach((c) => { ?>
-                        <dt><?js= this.linkto(c.longname, c.name) ?></dt>
-                        <dd><?js if (c.summary) { ?><?js= c.summary ?><?js } ?></dd>
-                    <?js }); ?>
-                </dl>
-            <?js } ?>
-
-            <?js if (!isGlobalPage && obj?.doclets?.interface?.length) { ?>
-                <h3 class="subsection-title">Interfaces</h3>
-                <dl>
-                    <?js obj.doclets.interface.forEach((i) => { ?>
-                        <dt><?js= this.linkto(i.longname, i.name) ?></dt>
-                        <dd><?js if (i.summary) { ?><?js= i.summary ?><?js } ?></dd>
-                    <?js }); ?>
-                </dl>
-            <?js } ?>
-
-            <?js if (!isGlobalPage && obj?.doclets?.mixin?.length) { ?>
-                <h3 class="subsection-title">Mixins</h3>
-                <dl>
-                    <?js obj.doclets.mixin.forEach((m) => { ?>
-                        <dt><?js= this.linkto(m.longname, m.name) ?></dt>
-                        <dd><?js if (m.summary) { ?><?js= m.summary ?><?js } ?></dd>
-                    <?js }); ?>
-                </dl>
-            <?js } ?>
-
-            <?js if (!isGlobalPage && obj?.doclets?.namespace?.length) { ?>
-                <h3 class="subsection-title">Namespaces</h3>
-                <dl>
-                    <?js obj.doclets.namespace.forEach((n) => { ?>
-                        <dt><?js= this.linkto(n.longname, n.name) ?></dt>
-                        <dd><?js if (n.summary) { ?><?js= n.summary ?><?js } ?></dd>
-                    <?js }); ?>
-                </dl>
-            <?js } ?>
-        </section>
-    </article>
+    <?js= this.partial("masters/module.tmpl", obj) ?>
 <?js } ?>
