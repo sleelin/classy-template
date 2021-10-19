@@ -20,6 +20,7 @@ class PublishUtils {
             find: (spec) => data(spec).get(),
             linkto: helper.linkto,
             resolveAuthorLinks: helper.resolveAuthorLinks,
+            typeString: PublishUtils.typeString,
             tutoriallink: PublishUtils.linkTutorial,
             htmlsafe: helper.htmlsafe,
             packageData: packageData,
@@ -92,8 +93,13 @@ class PublishUtils {
         }
     }
     
+    static typeString(name) {
+        // Turn clojure array syntax back into JSDoc array syntax!
+        return name.replace(/Array\.(?:<|&lt;)(.*)>/g, "$1[]");
+    }
+    
     static typeStrings({type}) {
-        return (type?.names || []).map(name => helper.linkto(name, helper.htmlsafe(name))).join(", ");
+        return (type?.names || []).map(name => PublishUtils.typeString(helper.linkto(name, helper.htmlsafe(name)))).join(", ");
     }
     
     static attribsString(attribs) {

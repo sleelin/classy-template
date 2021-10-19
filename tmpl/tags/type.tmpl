@@ -4,5 +4,5 @@
         linktoFn: (item) => (item?.length ? `<span class="signature type-signature">{${this.partial("tags/type.tmpl", Array.isArray(item) ? item : [item]).trim()}}</span>` : "")
     }) ?>
 <?js } else if (Array.isArray(obj)) { ?>
-    <?js= obj.map((name) => `<span class="param-type">${this.linkto(name, this.htmlsafe(name))}</span>`).join("|") ?>
+    <?js= obj.map((name) => `<span class="param-type">${this.typeString(this.linkto(name, this.htmlsafe(name)))}</span>`).join("|") ?>
 <?js } ?>
