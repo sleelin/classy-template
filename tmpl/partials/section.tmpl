@@ -1,5 +1,6 @@
 <?js if (obj?.items?.length && obj?.title) { ?>
-    <section class="<?js= [...(Array.isArray(obj.classes) ? obj.classes : (obj.classes ? [obj.classes] : []))].join(" ") ?>">
+    <section <?js= (obj?.id ? `id="${obj.id}"` : "") ?> class="<?js= [...(obj?.id ? [`child-${obj.id}`] : []), 
+        ...(Array.isArray(obj.classes) ? obj.classes : (obj.classes ? [obj.classes] : []))].join(" ") ?>">
         <h3 class="subsection-title"><?js= obj.title ?></h3>
         <?js if (obj.forEach && typeof obj.forEach === "function") { ?>
             <?js obj.items.forEach((item) => { ?><?js= obj.forEach(item) ?><?js }); ?>

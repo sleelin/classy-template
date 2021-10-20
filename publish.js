@@ -116,7 +116,7 @@ class PublishUtils {
             };
         
         nav.push(...[
-            PublishUtils.buildStructuredNav({scope: "global", kind: DocletPage.types}, data, seen, 3, apiEntry),
+            PublishUtils.buildStructuredNav({scope: "global", kind: DocletPage.containers}, data, seen, 3, apiEntry),
             ...["Modules", "Namespaces", "Classes", "Interfaces", "Events", "Mixins", "Externals", "Tutorials"].map(scope =>
                 PublishUtils.buildMemberNav(members[scope.toLowerCase()], scope, scope === "Tutorials" ? {} : seen, linkFns[scope] ?? helper.linkto)),
         ]);
@@ -181,6 +181,83 @@ class PublishUtils {
         return nav.length ? `<h3>${heading}</h3><ul>${nav}</ul>` : "";
     }
     
+    static buildTocNav(items = []) {
+        let listContent = "";
+        
+        for (let item of items) {
+            // Build a list of links for each child, as well as their children
+            let title = `<a href="#${item.id}">${item.name}</a>`,
+                children = PublishUtils.buildTocNav(item.children);
+            
+            listContent += `<li>${(item.section ? `<h5 class="toc-section">${title}</h5>` : title) + children}</li>`;
+        }
+        
+        return listContent.length ? `<ul>${listContent}</ul>` : "";
+    }
+    
+    static getTocStructure(page) {
+        let {kind, description, doclets: children, examples, params} = page, 
+            headings = [
+            // Add "Usage" catch-all heading if required
+            ...(["mainpage", "module"].includes(kind) ? [] : [{
+                id: "usage", name: "Usage", section: true,
+                children: !["class", "namespace"].includes(kind) ? [] : [
+                    ...(params?.length ? [{id: "params", name: "Parameters"}] : []),
+                    ...(examples?.length ? [{id: "examples", name: "Examples"}] : [])
+                ]
+            }]),
+            // Get titles in description from elements with "id" attribute
+            ...[...JSDOM.fragment(description).querySelectorAll(`[id]`)].map(e => ({
+                level: Number(!e.tagName.toUpperCase().startsWith("H") ? -1 : e.tagName.toUpperCase().replace("H", "")),
+                id: e.getAttribute("id"), name: e.textContent
+            }))
+            // Get rid of any invalid titles
+            .filter(h => (h.level > 0 && !!h.id && !!h.name))
+            .reduce((res, h) => {
+                h.children = (h.children || []);
+                
+                // If top level title, add it to the list
+                if (h.level < 3) {
+                    if (!res.includes(h)) res.push(h);
+                // Otherwise, try find a parent for it
+                } else {
+                    // Always start by assuming last title, if any, as parent
+                    let parent = res[res.length-1],
+                        level = (parent?.level > 0 ? parent?.level + 1 : h.level);
+                    
+                    // Find the closest parent at specified depth
+                    while (parent?.children?.length && level < h.level) {
+                        parent = parent.children[parent.children.length - 1];
+                    }
+                    
+                    // Add the child
+                    parent?.children?.push(h);
+                }
+                
+                delete h.level;
+                
+                return res;
+            }, [])
+        ];
+        
+        // Add titles for each container section
+        for (let c of DocletPage.containers) if (children[c]?.length) {
+            let name = `${DocletPage.titles[c]}${c === "class" ? "es" : "s"}`;
+            headings.push({id: name.toLowerCase(), name: name, section: true});
+        }
+        
+        // Add titles for each member section
+        for (let m of DocletPage.members) if (children[m]?.length) {
+            headings.push({
+                id: DocletPage.titles[m].toLowerCase(), name: DocletPage.titles[m], section: true,
+                // As well as entries for each member
+                children: children[m].map(d => ({id: d.id, name: `${m === "constant" ? "" : d.attribs}${d.name}`}))
+            });
+        }
+        
+        return headings;
+    }
+    
     static getRepository(packagePath, repository) {
         // Break if package.json or repository are undefined
         if (!repository || !packagePath) return {};
@@ -233,7 +310,8 @@ class DocletPage {
     #resolveLinks;
     
     constructor(source, children = [], resolveLinks) {
-        if (DocletPage.#pages.has(source)) return DocletPage.#pages.get(source);
+        if (DocletPage.#pages.has(source))
+            return DocletPage.#pages.get(source);
         
         DocletPage.#pages.set(source, this);
         Object.assign(this, source);
@@ -251,9 +329,11 @@ class DocletPage {
             return members;
         }, {}));
         
-        if (!DocletPage.#sources.has(this.path)) {
+        if (!DocletPage.#sources.has(this.path))
             DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
-        }
+        
+        if (this.kind === "mainpage")
+            this.description = (this.doclets?.readme ?? []).map(d => d.readme ?? "").join("");
         
         for (let doclet of [this, ...children]) {
             if (doclet.examples) {
@@ -298,6 +378,13 @@ class DocletPage {
         return nav.querySelector("#container").innerHTML;
     }
     
+    toc() {
+        let structure = PublishUtils.getTocStructure(this),
+            contents = PublishUtils.buildTocNav(structure);
+        
+        return contents.length ? `<h5 class="toc-title">Table of Contents</h5>${contents}` : "";
+    }
+    
     render() {
         let html = view.render("container.tmpl", this);
         return (this.#resolveLinks !== false ? helper.resolveLinks(html) : html);
@@ -307,6 +394,8 @@ class DocletPage {
         fs.writeFileSync(path.join(outdir, fileName || this.link), this.render(), "utf8");
     }
     
+    static containers = ["module", "class", "namespace", "mixin", "external", "interface"];
+    static members = ["member", "function", "constant", "typedef"];
     static titles = {
         module: "Module",
         class: "Class",
@@ -314,24 +403,25 @@ class DocletPage {
         mixin: "Mixin",
         external: "External",
         interface: "Interface",
-        source: "Source"
+        source: "Source",
+        member: "Members",
+        function: "Methods",
+        constant: "Constants",
+        typedef: "Type Definitions"
     };
-    
-    static types = Object.keys(DocletPage.titles);
-    static members = ["member", "function", "constant", "typedef"];
     
     static restructure(doclets, data) {
         for (let doclet of doclets) {
             // Go through all containers that get their own page
-            if (doclet.meta && DocletPage.types.includes(doclet.kind)) {
+            if (doclet.meta && DocletPage.containers.includes(doclet.kind)) {
                 let {filename, path, lineno} = doclet.meta,
                     // Get all container symbols in the same file as the doclet
-                    next = data({meta: {filename: filename, path: path}, kind: DocletPage.types}).get()
+                    next = data({meta: {filename: filename, path: path}, kind: DocletPage.containers}).get()
                         // Work out the next container symbol in the same file (if any)
                         .filter(d => d?.meta?.lineno > lineno).sort((a, b) => a.meta.lineno - b.meta.lineno).shift(),
                     // Get all non-container symbols in the file
                     children = data({meta: {filename: filename, path: path}},
-                        ...DocletPage.types.map(t => ({kind: {"!is": t}}))).get()
+                        ...DocletPage.containers.map(t => ({kind: {"!is": t}}))).get()
                         // And find ones that lie between this container and the next container
                         .filter(c => (["MethodDefinition"].includes(c?.meta?.code?.type)
                             && (c?.meta?.lineno > lineno) && (!next || c?.meta?.lineno < next?.meta?.lineno)));
@@ -344,7 +434,7 @@ class DocletPage {
                 }
                 
                 // Go deeper with page containing symbols
-                DocletPage.restructure(data({memberof: doclet.longname, kind: DocletPage.types}).get(), data);
+                DocletPage.restructure(data({memberof: doclet.longname, kind: DocletPage.containers}).get(), data);
             }
         }
     }
@@ -372,7 +462,7 @@ class DocletPage {
             if (!!doclet?.meta) {
                 // Establish initial inheritance chain for the doclet, as well as whether or not it is a container-generating doclet
                 let inheritance = new Set([...(doclet.augments ?? []), ...(doclet.implements ?? []), ...(doclet.overrides ?? [])]),
-                    isContainer = (doclet.kind in DocletPage.titles);
+                    isContainer = DocletPage.containers.includes(doclet.kind);
                 
                 // If it's not a container, it must have a parent
                 if (!isContainer) {
@@ -457,7 +547,8 @@ class DocletPage {
             
             if (needsSignature || needsTypes) {
                 // Add the attributes tag if signatures or types were set above
-                doclet.attribs = `<span class="type-signature">${PublishUtils.attribsString(helper.getAttribs(doclet))} </span>`;
+                let attribs = PublishUtils.attribsString(helper.getAttribs(doclet));
+                if (attribs.length) doclet.attribs = `<span class="type-signature">${attribs} </span>`;
             }
         }
     }
@@ -543,13 +634,13 @@ exports.publish = (data, opts, tutorials) => {
     PublishUtils.handleStatics(templatePath, conf.default.staticFiles, conf.classy);
     
     // Prepare all doclets for consumption
-    DocletPage.restructure(data({scope: "global", kind: DocletPage.types}).get(), data);
+    DocletPage.restructure(data({scope: "global", kind: DocletPage.containers}).get(), data);
     DocletPage.declare(data().get(), conf.classy.apiEntry, indexUrl);
     DocletPage.inherit(data().get(), data);
     DocletPage.sign(data().get(), data);
     pages.push(...[
         // Create pages for all container-type doclets
-        ...data({kind: DocletPage.types}).get()
+        ...data({kind: DocletPage.containers}).get()
             .map(doclet => new DocletPage(doclet, data({memberof: doclet.longname}).get())),
         // ...as well as any corresponding source files, if enabled, and gitPath not specified
         ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, sourceFiles.path) : [])
@@ -565,7 +656,7 @@ exports.publish = (data, opts, tutorials) => {
     // Find the API entry doclet (if specified) and move it to the index
     if (!!conf.classy.apiEntry) {
         // Find the doclet and remove it from pages - it no longer gets its own page
-        let entry = data({kind: DocletPage.types, longname: conf.classy.apiEntry}).first(),
+        let entry = data({kind: DocletPage.containers, longname: conf.classy.apiEntry}).first(),
             index = pages.indexOf(new DocletPage(entry)),
             page = (index >= 0 ? pages.splice(index, 1).pop() : false);
         

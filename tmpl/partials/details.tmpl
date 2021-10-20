@@ -1,4 +1,4 @@
-<section class="details">
+<section <?js= ["class", "namespace"].includes(obj.kind) ? `id="details"` : "" ?> class="details">
     <dl class="details-list">
         <?js= this.partial("tags/deprecated.tmpl", obj) ?>
         <?js= this.partial("tags/version.tmpl", obj) ?>

@@ -139,7 +139,10 @@ tt, code, kbd, samp {
     white-space: nowrap;
 }
 
-.class-signature pre code, .example pre code, .readme pre code, .description pre code {
+.class-signature pre code, 
+.example pre code, 
+.readme pre code, 
+.description pre code {
     display: block;
     padding: 10px 20px;
     border: 1px solid #ccc;
@@ -156,14 +159,26 @@ code {
 main {
     height: 100%;
     overflow: scroll;
+    display: grid;
+    grid-template-columns: 1fr 225px;
 }
 
 main > .content-container {
+    grid-row: 1;
     display: block;
     padding: 12px 24px;
     margin: 15px 15px 15px 0;
     border: 1px solid #dcdcdc;
     background: white;
+}
+
+main > .content-aside {
+    grid-row-start: 1;
+    grid-row-end: span 2;
+}
+
+main > .content-aside .content-nav {
+    height: calc(100vh - 60px);
 }
 
 .main-page .readme h2 {
@@ -238,40 +253,20 @@ section:not(:last-child) {
 nav {
     display: block;
     box-sizing: border-box;
-    padding: 0 30px 15px 15px;
     margin-top: 15px;
     overflow: scroll;
 }
 
 nav ul {
-    font-family: 'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
-    font-size: 100%;
-    padding: 0 0 0 10px;
     margin: 0;
     list-style-type: none;
+    padding: 0;
 }
 
 nav ul ul {
     padding-left: 15px;
     margin-bottom: 18px;
     border-left: 2px solid #ddd;
-}
-
-nav ul li:not(.active) ul {
-    display: none;
-}
-
-nav ul ul ul {
-    padding-left: 15px;
-}
-
-nav ul a, nav ul a:visited, nav ul a:active {
-    font-family: Consolas, Monaco, 'Andale Mono', monospace;
-    display: block;
-}
-
-nav ul ul a:not(.active), nav ul ul a:not(.active):visited, nav ul ul a:not(.active):active {
-    color: #4D4E53;
 }
 
 nav li {
@@ -284,6 +279,52 @@ nav a.active {
 
 nav > h1, nav > h2, nav > h3, nav > h4, nav > h5, nav > h6 {
     border-bottom: 1px solid #ddd;
+}
+
+nav.page-nav {
+    padding: 0 30px 15px 15px;
+}
+
+nav.page-nav ul {
+    font-family: 'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
+    font-size: 100%;
+    padding: 0 0 0 10px;
+}
+
+nav.page-nav ul li:not(.active) ul {
+    display: none;
+}
+
+nav.page-nav ul ul ul {
+    padding-left: 15px;
+}
+
+nav.page-nav ul a,
+nav.page-nav ul a:visited,
+nav.page-nav ul a:active {
+    font-family: Consolas, Monaco, 'Andale Mono', monospace;
+    display: block;
+}
+
+nav.page-nav ul ul a:not(.active),
+nav.page-nav ul ul a:not(.active):visited,
+nav.page-nav ul ul a:not(.active):active {
+    color: #4D4E53;
+}
+
+nav.content-nav {
+    position: sticky;
+    top: 1px;
+}
+
+nav.content-nav .toc-title {
+    background-color: #f1f1f7;
+    position: sticky;
+    top: 0;
+}
+
+nav.content-nav li a + ul {
+    margin-top: 8px;
 }
 
 footer {
