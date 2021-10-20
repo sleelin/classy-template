@@ -381,11 +381,13 @@ h6 {
     border-bottom: 1px solid #ddd;
 }
 
-.subsection-list > li {
+.subsection-list > li,
+.readme .description > ul > li {
     margin-bottom: 1em;
 }
 
-.subsection-list > li ul {
+.subsection-list > li ul,
+.readme .description > ul > li ul {
     margin-top: 0.5em;
 }
 
