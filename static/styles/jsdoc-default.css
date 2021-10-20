@@ -58,7 +58,7 @@ body > header {
     border-bottom: 1px solid #dcdcdc;
     display: grid;
     grid-auto-flow: column;
-    grid-template-columns: min-content 1fr;
+    grid-template-columns: 265px 1fr 225px;
     grid-template-rows: 60px;
     align-items: center;
     justify-items: center;
@@ -87,6 +87,7 @@ tt, code, kbd, samp {
     grid-column-gap: 10px;
     align-items: center;
     line-height: 1.3;
+    justify-self: start;
 }
 
 .package-name {
