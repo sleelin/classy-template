@@ -139,7 +139,7 @@ tt, code, kbd, samp {
     white-space: nowrap;
 }
 
-.class-signature pre code, .example pre code {
+.class-signature pre code, .example pre code, .readme pre code, .description pre code {
     display: block;
     padding: 10px 20px;
     border: 1px solid #ccc;
@@ -433,7 +433,14 @@ tr > th:last-child {
 }
 
 .details pre.prettyprint {
-    margin: 0
+    margin: 0;
+    display: inline-block;
+}
+
+.details pre code {
+    display: flex;
+    justify-content: flex-start;
+    flex-wrap: wrap;
 }
 
 .details .object-value {
@@ -451,25 +458,22 @@ tr > th:last-child {
     margin: 0;
 }
 
-.source {
-    border: 1px solid #ddd;
-    width: 80%;
-    overflow: auto;
-}
+/*.source {*/
+/*    border: 1px solid #ddd;*/
+/*    width: 80%;*/
+/*    overflow: auto;*/
+/*}*/
 
-.prettyprint.source {
-    width: inherit;
-}
+/*.prettyprint.source {*/
+/*    width: inherit;*/
+/*}*/
 
-.source code {
-    font-size: 100%;
-    line-height: 18px;
-    display: block;
-    padding: 4px 12px;
-    margin: 0;
-    background-color: #fff;
-    color: #4D4E53;
-}
+/*.source code {*/
+/*    font-size: 100%;*/
+/*    line-height: 18px;*/
+/*    display: block;*/
+/*    color: #4D4E53;*/
+/*}*/
 
 .prettyprint code span.line {
     display: inline-block;
@@ -502,7 +506,7 @@ tr > th:last-child {
     user-select: text;
 }
 
-.params .name, .props .name, .name code {
+.params .name, .props .name, .name code, .readme .description code {
     color: #4D4E53;
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
     font-size: 100%;

@@ -53,4 +53,9 @@
         title: "Events", classes: "child-events", items: obj?.doclets?.event,
         forEach: (item) => this.partial("partials/method.tmpl", item)
     }) ?>
+
+    <?js= this.partial("partials/section.tmpl", {
+        title: "Constants", classes: "child-constants", items: obj?.doclets?.constant,
+        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)
+    }) ?>
 </article>

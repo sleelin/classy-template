@@ -1,4 +1,4 @@
-<?js if (obj.params && params.length && !obj.hideconstructor) { ?>
+<?js if (obj?.params?.length && !obj.hideconstructor) { ?>
     <section class="params">
         <h5 class="subsection-title">Parameters:</h5>
         <?js= this.partial("partials/typedef.tmpl", {items: obj.params || []}) ?>

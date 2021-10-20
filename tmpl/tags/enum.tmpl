@@ -1,0 +1,5 @@
+<?js var beautify = ["object", "array"].includes(obj.defaultvaluetype); ?>
+<?js= this.partial("partials/definition.tmpl", {
+    title: "Values:", tag: "enum", items: obj.isEnum && obj.defaultvalue,
+    linktoFn: () => (beautify ? `<pre class="prettyprint lang-json"><code>${obj.defaultvalue}</code></pre>` : obj.defaultvalue)
+}) ?>

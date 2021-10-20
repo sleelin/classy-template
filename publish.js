@@ -453,7 +453,6 @@ class DocletPage {
                 
                 // Add types to the signature
                 doclet.signature = `${signature}<span class="type-signature">${types.length ? `: ${types}` : ""}</span>`;
-                if (kind === "constant") doclet.kind = "member";
             }
             
             if (needsSignature || needsTypes) {
