@@ -22,9 +22,14 @@
     url('../fonts/OpenSans-Light-webfont.svg#open_sanslight') format('svg');
 }
 
+:root {
+    --gutter-width-left: 250px;
+    --gutter-width-right: 220px;
+}
+
 html {
     overflow: auto;
-    font-size: 14px;
+    font-size: 0.875rem;
 }
 
 body {
@@ -34,7 +39,7 @@ body {
     background-color: #f1f1f7;
     margin: 60px 0 0;
     display: grid;
-    grid-template-columns: 265px 1fr;
+    grid-template-columns: max-content 1fr;
     grid-template-rows: calc(100vh - 60px);
 }
 
@@ -60,6 +65,7 @@ tt, code, kbd, samp {
 }
 
 .page-header {
+    z-index: 1;
     position: fixed;
     height: 60px;
     top: 0;
@@ -70,7 +76,7 @@ tt, code, kbd, samp {
     border-bottom: 1px solid #dcdcdc;
     display: grid;
     grid-auto-flow: column;
-    grid-template-columns: 265px 1fr 225px;
+    grid-template-columns: var(--gutter-width-left) 1fr var(--gutter-width-right);
     grid-template-rows: 60px;
     align-items: center;
     justify-items: center;
@@ -130,6 +136,11 @@ tt, code, kbd, samp {
     padding: 12px 0;
 }
 
+.page-header .page-links .page-nav-toggle {
+    margin-left: 15px;
+    display: none;
+}
+
 .class-description {
     font-size: 130%;
     line-height: 140%;
@@ -153,10 +164,6 @@ tt, code, kbd, samp {
     margin: 0;
 }
 
-.class-signature pre {
-    white-space: nowrap;
-}
-
 .class-signature pre code, 
 .example pre code, 
 .readme pre code, 
@@ -164,6 +171,11 @@ tt, code, kbd, samp {
     display: block;
     padding: 10px 20px;
     border: 1px solid #ccc;
+    white-space: pre-wrap;
+}
+
+.class-signature pre, .class-signature pre code {
+    white-space: unset;
 }
 
 code {
@@ -172,22 +184,26 @@ code {
     font-size: 85%;
     background-color: #afb8c133;
     border-radius: 6px;
+    overflow: scroll;
 }
 
 main {
     height: 100%;
     overflow: scroll;
     display: grid;
-    grid-template-columns: 1fr 225px;
+    grid-template-columns: 1fr min-content;
 }
 
 main > .content-container {
     grid-row: 1;
     display: block;
+    width: 100%;
     padding: 12px 24px;
-    margin: 15px 15px 15px 0;
+    margin: 15px 0 0;
     border: 1px solid #dcdcdc;
     background: white;
+    justify-self: end;
+    box-sizing: border-box;
 }
 
 main > .content-aside {
@@ -196,7 +212,7 @@ main > .content-aside {
 }
 
 main > .content-aside .content-nav {
-    height: calc(100vh - 60px);
+    height: calc(100vh - 61px);
 }
 
 .main-page .readme h2 {
@@ -283,7 +299,7 @@ nav ul {
 
 nav ul ul {
     padding-left: 15px;
-    margin-bottom: 18px;
+    margin-bottom: 12px;
     border-left: 2px solid #ddd;
 }
 
@@ -295,12 +311,16 @@ nav a.active {
     color: #950B02;
 }
 
-nav > h1, nav > h2, nav > h3, nav > h4, nav > h5, nav > h6 {
+nav > h1, nav > h2, nav > h3, nav > h4, nav > h5, nav > h6,
+nav .nav-content > h1, nav .nav-content > h2, nav .nav-content > h3,
+nav .nav-content > h4, nav .nav-content > h5, nav .nav-content > h6 {
     border-bottom: 1px solid #ddd;
 }
 
 nav.page-nav {
     padding: 0 30px 15px 15px;
+    width: 100%;
+    min-width: var(--gutter-width-left);
 }
 
 nav.page-nav ul {
@@ -333,6 +353,9 @@ nav.page-nav ul ul a:not(.active):active {
 nav.content-nav {
     position: sticky;
     top: 1px;
+    width: 100%;
+    min-width: var(--gutter-width-right);
+    padding: 0 15px;
 }
 
 nav.content-nav .toc-title {
@@ -360,23 +383,23 @@ h1, h2, h3, h4 {
 
 h1 {
     font-family: 'Open Sans Light', sans-serif;
-    font-size: 48px;
+    font-size: 3.4em;
     margin: 12px 24px 20px;
 }
 
 h2, h3.subsection-title {
-    font-size: 30px;
+    font-size: 2.1em;
     font-weight: 700;
     margin-bottom: 12px;
 }
 
 h3 {
-    font-size: 24px;
+    font-size: 1.7em;
     margin-bottom: 12px;
 }
 
 h4 {
-    font-size: 18px;
+    font-size: 1.29em;
     margin-bottom: 12px;
     color: #4d4e53;
 }
@@ -585,4 +608,122 @@ tr > th:last-child {
 
 .disabled {
     color: #454545;
+}
+
+@media (max-width: 1280px) {
+    :root {
+        --gutter-width-left: 225px;
+        --gutter-width-right: 205px;
+    }
+    
+    .page-header .package-details {
+        grid-column-gap: 0;
+    }
+    
+    nav, .content-container, footer {
+        font-size: 0.9em;
+    }
+}
+
+@media (max-width: 1176px) {
+    :root {
+        --gutter-width-left: 215px;
+        --gutter-width-right: 200px;
+    }
+    
+    .page-header .package-name img {
+        padding: 16px 0;
+    }
+    
+    .page-header .page-title {
+        font-size: 1.7em;
+    }
+    
+    nav, .content-container, footer {
+        font-size: 0.8em;
+    }
+    
+    .details dl .detail {
+        grid-template-columns: 80px 1fr;
+    }
+    
+    td.type .param-type {
+        display: block;
+    }
+    
+    td.type .param-join {
+        display: none;
+    }
+}
+
+@media (max-width: 1080px) {
+    :root {
+        --gutter-width-left: 200px;
+    }
+    
+     nav.page-nav {
+         padding: 0 15px 0 10px;
+     }
+     
+     nav.page-nav .nav-content > ul {
+         padding-left: 0;
+     }
+}
+
+@media (max-width: 952px) {
+    body {
+        grid-template-columns: 100%;
+    }
+    
+    main {
+        margin-left: 20px;
+    }
+    
+    .page-header {
+        grid-template-columns: 1fr 1fr;
+    }
+    
+    .page-header .page-links .page-nav-toggle {
+        display: flex;
+    }
+    
+    .page-header .page-title {
+        display: none;
+    }
+    
+    .section-header .page-title {
+        display: block;
+    }
+    
+    nav.page-nav {
+        position: absolute;
+    }
+    
+    nav.page-nav .nav-content {
+        position: fixed;
+        top: 61px;
+        left: -40%;
+        bottom: 0;
+        width: 40%;
+        background-color: #f1f1f7;
+        transform: translateX(0);
+        transition: transform 0.3s ease-in-out;
+        z-index: 999999;
+        overflow: scroll;
+        font-size: 1.3em;
+        padding: 10px 25px 0 15px;
+        box-sizing: border-box;
+    }
+    
+    nav.page-nav .nav-content ul {
+        padding-left: 15px;
+    }
+    
+    nav.page-nav .nav-content > ul {
+        padding-left: 5px;
+    }
+    
+    nav.page-nav input:checked + .nav-content {
+        transform: translateX(100%);
+    }
 }
