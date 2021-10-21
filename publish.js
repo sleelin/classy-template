@@ -52,13 +52,21 @@ class PublishUtils {
         
         // Copy static assets from
         if (classyStatics) {
-            let {logo} = classyStatics;
+            let {logo, gitImage} = classyStatics;
             
             if (typeof logo === "string") {
                 staticFiles.push({
                     sourcePath: path.resolve(env.pwd, logo),
-                    fileName: `assets/logo${path.extname(logo)}`,
+                    fileName: path.join("assets", `logo${path.extname(logo)}`),
                     fromDir: JSDocFS.toDir(path.dirname(path.resolve(env.pwd, logo)))
+                });
+            }
+            
+            if (typeof gitImage === "string") {
+                staticFiles.push({
+                    sourcePath: path.join(templatePath, "assets", gitImage),
+                    fileName: path.join("assets", gitImage),
+                    fromDir: JSDocFS.toDir(path.join(templatePath, "assets"))
                 });
             }
         }
@@ -282,9 +290,17 @@ class PublishUtils {
     
     // Map common Git hosts to their source file path link format and line tag prefix
     static #gitHosts = {
-        github: (path, commitish) => ({path: `https://github.com/${path}/blob/${commitish}/`, line: "L"}),
-        bitbucket: (path, commitish) => ({path: `https://bitbucket.org/${path}/src/${commitish}/`, line: "line-"}),
-        gitlab: (path, commitish) => ({path: `https://gitlab.com/${path}/blob/${commitish}/`, line: "L"})
+        github: (path, commitish) => ({
+            name: "GitHub", link: `https://github.com/${path}`, image: "github.png",
+            path: `https://github.com/${path}/blob/${commitish}/`, line: "L"
+        }),
+        bitbucket: (path, commitish) => ({
+            name: "Bitbucket", link: `https://bitbucket.org/${path}`, image: "bitbucket.svg",
+            path: `https://bitbucket.org/${path}/src/${commitish}/`, line: "line-"
+        }),
+        gitlab: (path, commitish) => ({
+            path: `https://gitlab.com/${path}/blob/${commitish}/`, line: "L"
+        })
     }
     
     static resolveGitHost(repository, commitish) {
@@ -611,7 +627,8 @@ exports.publish = (data, opts, tutorials) => {
             data({kind: "package"}).first() || {},
             (conf.classy.name ? {name: conf.classy.name} : {}),
             (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {}),
-            {showName: conf.classy.showName ?? true}
+            {showName: conf.classy.showName ?? true},
+            {showGitLink: conf.classy.showGitLink ?? true}
         ),
         sourceFiles = {
             output: conf?.default?.outputSourceFiles !== false, line: "line",
@@ -631,7 +648,7 @@ exports.publish = (data, opts, tutorials) => {
     
     // Set up templating and handle static files
     view = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, packageData, sourceFiles);
-    PublishUtils.handleStatics(templatePath, conf.default.staticFiles, conf.classy);
+    PublishUtils.handleStatics(templatePath, conf.default.staticFiles, {logo: conf.classy.logo, gitImage: sourceFiles.image});
     
     // Prepare all doclets for consumption
     DocletPage.restructure(data({scope: "global", kind: DocletPage.containers}).get(), data);

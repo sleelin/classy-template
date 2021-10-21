@@ -47,23 +47,6 @@ a:hover {
     text-decoration: underline;
 }
 
-body > header {
-    position: fixed;
-    height: 60px;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding: 0 30px 0 0;
-    background-color: white;
-    border-bottom: 1px solid #dcdcdc;
-    display: grid;
-    grid-auto-flow: column;
-    grid-template-columns: 265px 1fr 225px;
-    grid-template-rows: 60px;
-    align-items: center;
-    justify-items: center;
-}
-
 .hidden {
     display: none;
 }
@@ -76,7 +59,24 @@ tt, code, kbd, samp {
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
 }
 
-.package-details {
+.page-header {
+    position: fixed;
+    height: 60px;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 0;
+    background-color: white;
+    border-bottom: 1px solid #dcdcdc;
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: 265px 1fr 225px;
+    grid-template-rows: 60px;
+    align-items: center;
+    justify-items: center;
+}
+
+.page-header .package-details {
     margin: 0;
     font-size: 2.5rem;
     height: 100%;
@@ -90,7 +90,7 @@ tt, code, kbd, samp {
     justify-self: start;
 }
 
-.package-name {
+.page-header .package-name {
     text-decoration: none !important;
     height: 100%;
     box-sizing: border-box;
@@ -99,18 +99,35 @@ tt, code, kbd, samp {
     align-items: center;
 }
 
-.package-name img {
+.page-header .package-name img {
     max-height: 100%;
     box-sizing: border-box;
     padding: 12px 0;
 }
 
-.package-version {
+.page-header .package-version {
     font-size: 0.65em;
 }
 
 .page-header .page-title {
     margin: 0;
+}
+
+.page-header .page-links {
+    height: 100%;
+    display: flex;
+    padding: 0 20px;
+    justify-self: end;
+}
+
+.page-header .page-links a {
+    text-decoration: none !important;
+}
+
+.page-header .page-links img {
+    height: 100%;
+    box-sizing: border-box;
+    padding: 12px 0;
 }
 
 .class-description {

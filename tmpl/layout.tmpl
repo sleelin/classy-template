@@ -24,6 +24,13 @@
             <h2 class="package-details"><a href="index.html">Home</a></h2>
         <?js } ?>
         <h2 class="page-title"><?js= heading ?></h2>
+        <div class="page-links">
+            <?js if (!!this.sourceFiles?.link && this.packageData?.showGitLink !== false) { ?>
+                <a href="<?js= this.sourceFiles?.link ?>" title="View Source<?js= this.sourceFiles?.link ? ` on ${this.sourceFiles.name}` : ""?>">
+                    <img alt="View Source<?js= this.sourceFiles?.link ? ` on ${this.sourceFiles.name}` : ""?>" src="static/assets/<?js= this.sourceFiles?.image ?>" />
+                </a>
+            <?js } ?>
+        </div>
     </header>
     <nav class="page-nav"><?js= obj.nav(this.boilerplateNav) ?></nav>
     <main id="main">
