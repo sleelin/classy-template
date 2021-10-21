@@ -103,7 +103,7 @@ class PublishUtils {
     
     static typeString(name) {
         // Turn clojure array syntax back into JSDoc array syntax!
-        return name.replace(/Array\.(?:<|&lt;)(.*)>/g, "$1[]");
+        return name.replace(/Array\.(?:<|&lt;)(.*)>/g, "$1[]").replace(/(.*>)(?:.*?)~(.*)/g, "$1~$2");
     }
     
     static typeStrings({type}) {
