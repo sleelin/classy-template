@@ -5,18 +5,18 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?js= (obj.kind === "mainpage" && obj.title !== "Home" ? "" : `${this.packageData?.name || "JSDoc"}: `) ?><?js= title ?></title>
-    <script src="static/scripts/classy.js"></script>
-    <script src="static/scripts/prettify/prettify.js"></script>
-    <script src="static/scripts/prettify/lang-css.js"></script>
-    <link type="text/css" rel="stylesheet" href="static/styles/classy.css">
-    <link type="text/css" rel="stylesheet" href="static/styles/prettify-tomorrow.css">
+    <script src="static/classy.js"></script>
+    <script src="static/prettify/prettify.js"></script>
+    <script src="static/prettify/lang-css.js"></script>
+    <link type="text/css" rel="stylesheet" href="static/classy.css">
+    <link type="text/css" rel="stylesheet" href="static/prettify/prettify.css">
 </head>
 
 <body>
     <header class="page-header">
         <?js if (!!this.packageData?.name) { ?>
             <h1 class="package-details">
-                <a class="package-name" href="index.html">
+                <a class="package-name" href="./">
                     <?js if (this.packageData?.logo) { ?><img alt="<?js= this.packageData?.name ?>" src="<?js= this.packageData.logo ?>" /><?js } ?>
                     <?js if (this.packageData?.showName !== false) { ?><span><?js= this.packageData.name ?></span><?js } ?>
                 </a>
