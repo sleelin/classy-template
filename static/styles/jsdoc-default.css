@@ -40,7 +40,7 @@ body {
     margin: 60px 0 0;
     display: grid;
     grid-template-columns: max-content 1fr;
-    grid-template-rows: calc(100vh - 60px);
+    grid-template-rows: calc(100vh - 60px - env(safe-area-inset-top, 20px));
 }
 
 a, a:visited, a:active {
@@ -725,7 +725,7 @@ tr > th:last-child {
         top: 0;
         bottom: 0;
         left: 0;
-        border-left: 1px dashed #ddd;
+        border-left: 1px dashed #aaa;
     }
     
     .params .subsection-content:after,
@@ -736,7 +736,7 @@ tr > th:last-child {
         top: 0;
         bottom: 0;
         right: 0;
-        border-right: 1px dashed #ddd;
+        border-right: 1px dashed #aaa;
     }
     
     .params .subsection-content table,
