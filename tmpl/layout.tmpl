@@ -8,8 +8,8 @@
     <script src="static/scripts/classy.js"></script>
     <script src="static/scripts/prettify/prettify.js"></script>
     <script src="static/scripts/prettify/lang-css.js"></script>
+    <link type="text/css" rel="stylesheet" href="static/styles/classy.css">
     <link type="text/css" rel="stylesheet" href="static/styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="static/styles/jsdoc-default.css">
 </head>
 
 <body>
@@ -33,7 +33,7 @@
                 </a>
             <?js } ?>
             <div class="page-nav-toggle tiny-page-nav-toggle">
-                <input type="checkbox" name="tiny-page-nav-toggle" id="tiny-page-nav-toggle"/>
+                <input type="checkbox" name="tiny-page-nav-toggle" id="tiny-page-nav-toggle" autocomplete="off"/>
                 <label for="tiny-page-nav-toggle">
                     <span></span>
                     <span></span>
@@ -44,7 +44,7 @@
     </header>
     <nav class="page-nav">
         <label class="hidden" for="tiny-page-nav"></label>
-        <input class="hidden tiny-page-nav-target" type="checkbox" id="tiny-page-nav"/>
+        <input class="hidden tiny-page-nav-target" type="checkbox" id="tiny-page-nav"  autocomplete="off"/>
         <div class="nav-content">
             <?js= obj.nav(this.boilerplateNav) ?>
         </div>
@@ -57,7 +57,6 @@
         </footer>
     </main>
     <script>prettyPrint();</script>
-    <script src="static/scripts/linenumber.js"></script>
 </body>
 
 </html>
