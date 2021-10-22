@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?js= this.packageData?.name || "JSDoc"?>: <?js= title ?></title>
+    <title><?js= (obj.kind === "mainpage" && obj.title !== "Home" ? "" : `${this.packageData?.name || "JSDoc"}: `) ?><?js= title ?></title>
     <script src="static/scripts/tiny-page-nav.js"></script>
     <script src="static/scripts/prettify/prettify.js"></script>
     <script src="static/scripts/prettify/lang-css.js"></script>
@@ -18,7 +18,7 @@
         <?js if (!!this.packageData?.name) { ?>
             <h1 class="package-details">
                 <a class="package-name" href="index.html">
-                    <?js if (this.packageData?.logo) { ?><img alt="<?js= this.packageData?.name ?? "JSDoc"?>" src="<?js= this.packageData.logo ?>" /><?js } ?>
+                    <?js if (this.packageData?.logo) { ?><img alt="<?js= this.packageData?.name ?>" src="<?js= this.packageData.logo ?>" /><?js } ?>
                     <?js if (this.packageData?.showName !== false) { ?><span><?js= this.packageData.name ?></span><?js } ?>
                 </a>
                 <span class="package-version type-signature"><?js= this.packageData.version ?></span>
@@ -26,7 +26,7 @@
         <?js } else { ?>
             <h2 class="package-details"><a href="index.html">Home</a></h2>
         <?js } ?>
-        <h2 class="page-title"><?js= heading ?></h2>
+        <h2 class="page-title"><?js= obj.heading ?></h2>
         <div class="page-links">
             <?js if (!!this.sourceFiles?.link && this.packageData?.showGitLink !== false) { ?>
                 <a href="<?js= this.sourceFiles?.link ?>" title="View Source<?js= this.sourceFiles?.link ? ` on ${this.sourceFiles.name}` : ""?>">

@@ -348,8 +348,10 @@ class DocletPage {
         if (!DocletPage.#sources.has(this.path))
             DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
         
-        if (this.kind === "mainpage")
+        if (this.kind === "mainpage") {
+            this.title = this.name;
             this.description = (this.doclets?.readme ?? []).map(d => d.readme ?? "").join("");
+        }
         
         for (let doclet of [this, ...children]) {
             if (doclet.examples) {
