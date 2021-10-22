@@ -299,6 +299,7 @@ class PublishUtils {
             path: `https://bitbucket.org/${path}/src/${commitish}/`, line: "line-"
         }),
         gitlab: (path, commitish) => ({
+            name: "GitLab", link: `https://gitlab.com/${path}`, image: "gitlab.svg",
             path: `https://gitlab.com/${path}/blob/${commitish}/`, line: "L"
         })
     }
