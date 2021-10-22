@@ -1,6 +1,8 @@
 <?js if (obj?.params?.length && !obj.hideconstructor) { ?>
     <section <?js= ["class", "namespace"].includes(obj.kind) ? `id="params"` : "" ?> class="params">
         <h5 class="subsection-title">Parameters:</h5>
-        <?js= this.partial("partials/typedef.tmpl", {items: obj.params || []}) ?>
+        <div class="subsection-content">
+            <?js= this.partial("partials/typedef.tmpl", {items: obj.params || []}) ?>
+        </div>
     </section>
 <?js } ?>

@@ -65,7 +65,7 @@ tt, code, kbd, samp {
 }
 
 .page-header {
-    z-index: 1;
+    z-index: 100;
     position: fixed;
     height: 60px;
     top: 0;
@@ -106,6 +106,7 @@ tt, code, kbd, samp {
 }
 
 .page-header .package-name img {
+    max-width: 100%;
     max-height: 100%;
     box-sizing: border-box;
     padding: 12px 0;
@@ -191,7 +192,7 @@ main {
     height: 100%;
     overflow: scroll;
     display: grid;
-    grid-template-columns: 1fr min-content;
+    grid-template-columns: calc(100vw - var(--gutter-width-left) - var(--gutter-width-right)) min-content;
 }
 
 main > .content-container {
@@ -671,12 +672,80 @@ tr > th:last-child {
 }
 
 @media (max-width: 952px) {
+    :root {
+        --gutter-width-left: 0px;
+    }
+    
     body {
         grid-template-columns: 100%;
     }
     
-    main {
-        margin-left: 20px;
+    main > .content-container {
+        margin-left: 15px;
+        justify-self: unset;
+        width: auto;
+    }
+    
+    .params .subsection-content, .props dd {
+        overflow: scroll;
+        position: relative;
+        z-index: 1;
+        box-sizing: border-box;
+        display: flex;
+    }
+    
+    .params .subsection-content:before, .props dd:before {
+        position: sticky;
+        content: "";
+        display: flex;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        border-left: 1px dashed #ddd;
+    }
+    
+    .params .subsection-content:after, .props dd:after {
+        position: sticky;
+        content: "";
+        display: flex;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        border-right: 1px dashed #ddd;
+    }
+    
+    .params .subsection-content table, .props table {
+        position: relative;
+    }
+    
+    .params .subsection-content table:before, .props table:before {
+        position: absolute;
+        content: "";
+        display: block;
+        top: -1px;
+        bottom: 0;
+        left: -1px;
+        border-left: 1px solid #ddd;
+        z-index: 2;
+    }
+    
+    .params .subsection-content table:after, .props table:after {
+        position: absolute;
+        content: "";
+        display: block;
+        top: -1px;
+        bottom: 0;
+        right: -1px;
+        border-right: 1px solid #ddd;
+        z-index: 2;
+    }
+    
+    .params .subsection-content table tr :first-child, .props table tr :first-child {
+        border-left-width: 0;
+    }
+    
+    .params .subsection-content table tr :last-child, .props table tr :last-child {
+        border-right-width: 0;
     }
     
     .page-header {
@@ -702,9 +771,9 @@ tr > th:last-child {
     nav.page-nav .nav-content {
         position: fixed;
         top: 61px;
-        left: -40%;
+        left: -265px;
         bottom: 0;
-        width: 40%;
+        width: 265px;
         background-color: #f1f1f7;
         transform: translateX(0);
         transition: transform 0.3s ease-in-out;

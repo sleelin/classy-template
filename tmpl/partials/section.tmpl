@@ -3,7 +3,9 @@
         ...(Array.isArray(obj.classes) ? obj.classes : (obj.classes ? [obj.classes] : []))].join(" ") ?>">
         <h3 class="subsection-title"><?js= obj.title ?></h3>
         <?js if (obj.forEach && typeof obj.forEach === "function") { ?>
-            <?js obj.items.forEach((item) => { ?><?js= obj.forEach(item) ?><?js }); ?>
+            <div class="subsection-content">
+                <?js obj.items.forEach((item) => { ?><?js= obj.forEach(item) ?><?js }); ?>
+            </div>
         <?js } else { ?>
             <ul class="subsection-list">
                 <?js obj.items.forEach((item) => { ?>
