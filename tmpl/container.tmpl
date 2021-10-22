@@ -8,5 +8,20 @@
     <?js= this.partial("masters/module.tmpl", obj) ?>
 <?js } ?>
 <aside class="content-aside">
-    <nav class="content-nav"><?js= obj.toc() ?></nav>
+    <?js var toc = obj.toc(); ?>
+    <?js if (toc.length) { ?>
+        <div class="toc-tiny">
+            <h2 class="page-title"><?js= obj.heading ?></h2>
+            <details class="content-toc">
+                <summary>Table of Contents</summary>
+                <nav class="content-toc"><?js= toc ?></nav>
+            </details>
+        </div>
+        <div class="toc-regular">
+            <nav class="content-nav">
+                <h5 class="toc-title">Table of Contents</h5>
+                <?js= toc ?>
+            </nav>
+        </div>
+    <?js } ?>
 </aside>

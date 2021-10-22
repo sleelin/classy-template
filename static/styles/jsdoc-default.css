@@ -172,11 +172,11 @@ tt, code, kbd, samp {
     display: block;
     padding: 10px 20px;
     border: 1px solid #ccc;
-    white-space: pre-wrap;
+    /*white-space: pre-wrap;*/
 }
 
 .class-signature pre, .class-signature pre code {
-    white-space: unset;
+    white-space: nowrap;
 }
 
 code {
@@ -239,6 +239,15 @@ main > .content-aside .content-nav {
 
 .section-header .page-title {
     display: none;
+    font-size: 1.9em;
+    margin: 0 -10px 12px;
+    text-align: center;
+}
+
+.toc-tiny .page-title {
+    font-size: 1.8em;
+    border-bottom: 1px solid #ddd;
+    padding-left: 5px;
 }
 
 article dl {
@@ -283,6 +292,14 @@ section:not(:last-child) {
     color: #aaa;
     font-style: italic;
     font-weight: lighter;
+}
+
+.toc-tiny {
+    display: none;
+}
+
+.toc-tiny details.content-toc {
+    padding: 0 10px;
 }
 
 nav {
@@ -354,18 +371,32 @@ nav.page-nav ul ul a:not(.active):active {
 nav.content-nav {
     position: sticky;
     top: 1px;
-    width: 100%;
-    min-width: var(--gutter-width-right);
     padding: 0 15px;
+    min-width: var(--gutter-width-right);
+}
+
+nav.content-toc {
+    padding: 0 30px;
+    font-size: 0.9em;
+}
+
+nav.content-nav,
+nav.content-toc {
+    width: 100%;
+}
+
+nav.content-nav .toc-title,
+nav.content-toc .toc-title {
+    background-color: #f1f1f7;
 }
 
 nav.content-nav .toc-title {
-    background-color: #f1f1f7;
     position: sticky;
     top: 0;
 }
 
-nav.content-nav li a + ul {
+nav.content-nav li a + ul,
+nav.content-toc li a + ul{
     margin-top: 8px;
 }
 
@@ -543,23 +574,6 @@ tr > th:last-child {
     margin: 0;
 }
 
-/*.source {*/
-/*    border: 1px solid #ddd;*/
-/*    width: 80%;*/
-/*    overflow: auto;*/
-/*}*/
-
-/*.prettyprint.source {*/
-/*    width: inherit;*/
-/*}*/
-
-/*.source code {*/
-/*    font-size: 100%;*/
-/*    line-height: 18px;*/
-/*    display: block;*/
-/*    color: #4D4E53;*/
-/*}*/
-
 .prettyprint code span.line {
     display: inline-block;
 }
@@ -591,18 +605,21 @@ tr > th:last-child {
     user-select: text;
 }
 
-.params .name, .props .name, .name code, .readme .description code {
+.params .name, .props .name, .name code,
+.readme .description code {
     color: #4D4E53;
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
     font-size: 100%;
 }
 
-.params td.description > p:first-child, .props td.description > p:first-child {
+.params td.description > p:first-child, 
+.props td.description > p:first-child {
     margin-top: 0;
     padding-top: 0;
 }
 
-.params td.description > p:last-child, .props td.description > p:last-child {
+.params td.description > p:last-child,
+.props td.description > p:last-child {
     margin-bottom: 0;
     padding-bottom: 0;
 }
@@ -692,9 +709,11 @@ tr > th:last-child {
         z-index: 1;
         box-sizing: border-box;
         display: flex;
+        padding-bottom: 10px;
     }
     
-    .params .subsection-content:before, .props dd:before {
+    .params .subsection-content:before,
+    .props dd:before {
         position: sticky;
         content: "";
         display: flex;
@@ -704,7 +723,8 @@ tr > th:last-child {
         border-left: 1px dashed #ddd;
     }
     
-    .params .subsection-content:after, .props dd:after {
+    .params .subsection-content:after,
+    .props dd:after {
         position: sticky;
         content: "";
         display: flex;
@@ -714,11 +734,13 @@ tr > th:last-child {
         border-right: 1px dashed #ddd;
     }
     
-    .params .subsection-content table, .props table {
+    .params .subsection-content table,
+    .props table {
         position: relative;
     }
     
-    .params .subsection-content table:before, .props table:before {
+    .params .subsection-content table:before,
+    .props table:before {
         position: absolute;
         content: "";
         display: block;
@@ -729,7 +751,8 @@ tr > th:last-child {
         z-index: 2;
     }
     
-    .params .subsection-content table:after, .props table:after {
+    .params .subsection-content table:after,
+    .props table:after {
         position: absolute;
         content: "";
         display: block;
@@ -740,11 +763,13 @@ tr > th:last-child {
         z-index: 2;
     }
     
-    .params .subsection-content table tr :first-child, .props table tr :first-child {
+    .params .subsection-content table tr :first-child,
+    .props table tr :first-child {
         border-left-width: 0;
     }
     
-    .params .subsection-content table tr :last-child, .props table tr :last-child {
+    .params .subsection-content table tr :last-child,
+    .props table tr :last-child {
         border-right-width: 0;
     }
     
@@ -794,5 +819,86 @@ tr > th:last-child {
     
     nav.page-nav input:checked + .nav-content {
         transform: translateX(100%);
+    }
+}
+
+@media (max-width: 648px) {
+    :root {
+        --gutter-width-right: 0px;
+    }
+    
+    main > .content-container {
+        grid-template-columns: 100%;
+    }
+    
+    main > .content-container {
+        grid-row: 2;
+        margin-right: 15px;
+    }
+    
+    main > .content-aside {
+        grid-row-end: 1;
+        margin: 15px 15px 0;
+    }
+    
+    main > footer {
+        grid-row: 3;
+    }
+    
+    .toc-regular {
+        display: none;
+    }
+    
+    .toc-tiny {
+        display: block;
+    }
+    
+    .section-header .page-title {
+        display: none;
+    }
+}
+
+@media (max-width: 580px) {
+    main > .content-container {
+        margin: 15px 0 0;
+        padding: 12px 24px 12px 18px;
+    }
+    
+    main > .content-aside {
+        margin: 5px 15px 0 5px;
+    }
+    
+    main > .content-container ul {
+        padding-left: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    header > .name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    header > .name .type-signature:last-child {
+        display: none;
+    }
+    
+    .returns dt {
+        float: left;
+        padding-right: 5px;
+    }
+    
+    .returns dd {
+        margin-left: 0;
+    }
+    
+    .returns .signature .param-type:not(:only-child) {
+        display: block;
+        margin-left: 20px;
+    }
+    
+    .returns .signature .param-join {
+        display: none;
     }
 }

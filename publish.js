@@ -395,10 +395,7 @@ class DocletPage {
     }
     
     toc() {
-        let structure = PublishUtils.getTocStructure(this),
-            contents = PublishUtils.buildTocNav(structure);
-        
-        return contents.length ? `<h5 class="toc-title">Table of Contents</h5>${contents}` : "";
+        return PublishUtils.buildTocNav(PublishUtils.getTocStructure(this));
     }
     
     render() {
@@ -553,7 +550,7 @@ class DocletPage {
                 
                 // Add params to the signature, then add attribs and returns to the signature
                 doclet.signature = `<span class="signature">${signature}(${args})</span>`;
-                doclet.signature += `<span class="type-signature">${returns.length ? ` &rarr; ${attribs}{${returns}}` : ""}</span>`;
+                doclet.signature += `<span class="type-signature returns">${returns.length ? ` &rarr; ${attribs}{${returns}}` : ""}</span>`;
             } else if (needsTypes) {
                 let types = PublishUtils.typeStrings(doclet);
                 
