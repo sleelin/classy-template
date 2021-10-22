@@ -56,6 +56,10 @@ a:hover {
     display: none;
 }
 
+.disabled {
+    color: #454545;
+}
+
 header {
     display: block;
 }
@@ -629,8 +633,73 @@ tr > th:last-child {
     padding-bottom: 0;
 }
 
-.disabled {
-    color: #454545;
+.tiny-page-nav-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.tiny-page-nav-toggle input {
+    display: none;
+}
+
+.tiny-page-nav-toggle input + label span {
+    display: block;
+    width: 30px;
+    height: 4px;
+    margin-bottom: 5px;
+    position: relative;
+    background: #4d4e53;
+    border-radius: 3px;
+    z-index: 1;
+    transform-origin: 4px 0;
+    transition: transform 0.5s cubic-bezier(0.77, 0.2, 0.05, 1), background 0.5s cubic-bezier(0.77, 0.2, 0.05, 1), opacity 0.55s ease;
+}
+
+.tiny-page-nav-toggle input + label span:first-child {
+    transform-origin: 0 0;
+}
+
+.tiny-page-nav-toggle input + label span:last-child {
+    margin-bottom: 0;
+}
+
+.tiny-page-nav-toggle input + label span:nth-last-child(2) {
+    transform-origin: 0 100%;
+}
+
+.tiny-page-nav-toggle input + label:after {
+    display: block;
+    content: "";
+    position: fixed;
+    top: 61px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0;
+    background-color: black;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in;
+    z-index: 999998;
+}
+
+.tiny-page-nav-toggle input:checked + label:after {
+    opacity: 0.8;
+    pointer-events: all;
+}
+
+.tiny-page-nav-toggle input:checked + label span {
+    opacity: 1;
+    transform: rotate(-45deg) translate(-1px, -2px);
+}
+
+.tiny-page-nav-toggle input:checked + label span:first-child {
+    transform: rotate(45deg) translate(0, -2px);
+}
+
+.tiny-page-nav-toggle input:checked + label span:nth-last-child(2) {
+    opacity: 0;
+    transform: rotate(0deg) scale(0.2, 0.2);
 }
 
 @media (max-width: 1280px) {
