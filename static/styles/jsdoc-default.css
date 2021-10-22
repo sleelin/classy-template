@@ -294,6 +294,11 @@ section:not(:last-child) {
     font-weight: lighter;
 }
 
+.toc-regular {
+    position: sticky;
+    top: 0;
+}
+
 .toc-tiny {
     display: none;
 }
