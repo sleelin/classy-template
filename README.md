@@ -75,13 +75,13 @@ These are specified under the "classy" section of the templates part of the JSDo
     *   When specified, classy will attempt to generate a structured "API" section in the navigation menu, with member namespaces and classes included.
     *   If a README file is supplied to JSDoc and it includes an "API" heading, classy will automatically replace all content between the "API" heading and the next heading it finds with the contents of the entry point's `@description` JSDoc tag _in the generated index page_ (it will _not_ modify your README file).
     *   If an entry point is specified, but no README is supplied, the contents of the entry point's `@description` JSDoc tag will be used as the generated index page content.
-*   `showName`: boolean value indicating whether or not the name text should be included alongside the logo in the index page link.
+*   `showName`: whether or not the name text should be included alongside the logo in the index page link.
     *   If no logo has been specified, this option will be ignored and the name will be shown in the header.
     *   Defaults to true, and the name will only be hidden from the index link if this is set to the boolean value false.
-*   `showVersion`: boolean value indicating whether or not the package version should be included after the index page link.
+*   `showVersion`: whether or not the package version should be included after the index page link.
     *   If no package.json file is supplied to JSDoc, this option will be ignored and no version will be included in the header.
     *   Defaults to true, and the version will only be hidden from the header if this is set to the boolean value false, or no package.json file is supplied.
-*   `showGitLink`: boolean value indicating whether or not the git repository host logo should be shown as a link to the repository in the header.
+*   `showGitLink`: whether or not the git repository host logo should be shown as a link to the repository in the header.
     *   If no package.json file is supplied to JSDoc, this option will be ignored and no logo will be included in the header.
     *   Defaults to true, and the git host logo/link will only be hidden from the header if this is set to the boolean value false, or no package.json file is supplied.
     *   Currently supported git hosts are GitHub, Bitbucket, and GitLab, and any other host will be ignored and no logo will be shown.
