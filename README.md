@@ -20,12 +20,12 @@ Unlike the default template, it does not directly depend on TaffyDB, however it 
 # Installation and Usage
 Through NPM:
 ```
-$ npm install --save-dev classy-jsdoc-template
+$ npm install --save-dev classy-template
 ```
 
 Assuming you have JSDoc installed, you can then use this template without any further configuration:
 ```
-$ /path/to/jsdoc -t ./node_modules/classy-jsdoc-template
+$ /path/to/jsdoc -t ./node_modules/classy-template
 ```
 
 # Configuration
@@ -41,7 +41,7 @@ Example `jsdoc.json` file:
   },
   "opts": {
     "recurse": true,
-    "template": "./node_modules/classy-jsdoc-template",
+    "template": "./node_modules/classy-template",
     "destination": "./docs",
     "readme": "./README.md",
     "package": "./package.json"

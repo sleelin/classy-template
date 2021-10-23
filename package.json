@@ -1,22 +1,21 @@
 {
-  "name": "classy-jsdoc-template",
-  "version": "1.0.1",
+  "name": "classy-template",
+  "version": "1.0.0",
   "description": "Improvements on the default JSDoc 3.6 template for modern ESM-style source code.",
   "author": "sleelin",
   "license": "MIT",
   "keywords": [
     "jsdoc",
-    "jsdoc3",
     "jsdoc-template",
     "template"
   ],
-  "homepage": "https://github.com/sleelin/classy-jsdoc-template#readme",
+  "homepage": "https://github.com/sleelin/classy-template#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sleelin/classy-jsdoc-template.git"
+    "url": "git+https://github.com/sleelin/classy-template.git"
   },
   "bugs": {
-    "url": "https://github.com/sleelin/classy-jsdoc-template/issues"
+    "url": "https://github.com/sleelin/classy-template/issues"
   },
   "dependencies": {
     "jsdom": "^18.0.0"
