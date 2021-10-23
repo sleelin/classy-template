@@ -14,17 +14,15 @@
 
 <body>
     <header class="page-header">
-        <?js if (!!this.packageData?.name) { ?>
-            <h1 class="package-details">
-                <a class="package-name" href="./">
-                    <?js if (this.packageData?.logo) { ?><img alt="<?js= this.packageData?.name ?>" src="<?js= this.packageData.logo ?>" /><?js } ?>
-                    <?js if (this.packageData?.showName !== false) { ?><span><?js= this.packageData.name ?></span><?js } ?>
-                </a>
+        <h1 class="package-details">
+            <a class="package-name" href="./">
+                <?js if (this.packageData?.logo) { ?><img alt="<?js= this.packageData?.name ?>" src="<?js= this.packageData.logo ?>" /><?js } ?>
+                <?js if (this.packageData?.showName !== false || !this.packageData?.logo) { ?><span><?js= this.packageData.name ?></span><?js } ?>
+            </a>
+            <?js if (!!this.packageData?.version && this.packageData?.showVersion !== false) { ?>
                 <span class="package-version type-signature"><?js= this.packageData.version ?></span>
-            </h1>
-        <?js } else { ?>
-            <h2 class="package-details"><a href="index.html">Home</a></h2>
-        <?js } ?>
+            <?js } ?>
+        </h1>
         <h2 class="page-title"><?js= obj.heading ?></h2>
         <div class="page-links">
             <?js if (!!this.sourceFiles?.link && this.packageData?.showGitLink !== false) { ?>

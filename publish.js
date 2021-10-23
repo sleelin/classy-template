@@ -624,10 +624,12 @@ exports.publish = (data, opts, tutorials) => {
             {classy: env.conf.templates.classy || {}}
         ),
         packageData = Object.assign(
+            {name: "Home"},
             data({kind: "package"}).first() || {},
             (conf.classy.name ? {name: conf.classy.name} : {}),
             (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {}),
             {showName: conf.classy.showName ?? true},
+            {showVersion: conf.classy.showVersion ?? true},
             {showGitLink: conf.classy.showGitLink ?? true}
         ),
         sourceFiles = {
