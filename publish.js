@@ -189,64 +189,63 @@ class PublishUtils {
         return nav.length ? `<h3>${heading}</h3><ul>${nav}</ul>` : "";
     }
     
-    static buildTocNav(items = []) {
+    static buildTocNav(items = [], inline = false) {
         let listContent = "";
         
         for (let item of items) {
             // Build a list of links for each child, as well as their children
-            let title = `<a href="#${item.id}">${item.name}</a>`,
+            let title = (!!item.id ? `<a href="#${item.id}">${item.name}</a>` : item.name),
+                siblings = PublishUtils.buildTocNav(item.siblings, true),
                 children = PublishUtils.buildTocNav(item.children);
             
-            listContent += `<li>${(item.section ? `<h5 class="toc-section">${title}</h5>` : title) + children}</li>`;
+            listContent += `<li>${(item.section ? `<h5 class="toc-section">${title}</h5>` : title) + siblings + children}</li>`;
         }
         
-        return listContent.length ? `<ul>${listContent}</ul>` : "";
+        return listContent.length ? `<ul${inline ? ` class="no-indent"` : ""}>${listContent}</ul>` : "";
     }
     
     static getTocStructure(page) {
         let {kind, description, doclets: children, examples, params} = page, 
-            headings = [
-            // Add "Usage" catch-all heading if required
-            ...(["mainpage", "module"].includes(kind) ? [] : [{
-                id: "usage", name: "Usage", section: true,
+            // Get titles in description from elements with "id" attribute
+            titles = [...JSDOM.fragment(description).querySelectorAll(`[id]`)].map(e => ({
+                    level: Number(!e.tagName.toUpperCase().startsWith("H") ? -1 : e.tagName.toUpperCase().replace("H", "")),
+                    id: e.getAttribute("id"), name: e.textContent
+                }))
+                // Get rid of any invalid titles
+                .filter(h => (h.level > 0 && !!h.id && !!h.name))
+                .reduce((res, h) => {
+                    h.children = (h.children || []);
+                    
+                    // If top level title, add it to the list
+                    if (h.level < 3) {
+                        if (!res.includes(h)) res.push(h);
+                    // Otherwise, try find a parent for it
+                    } else {
+                        // Always start by assuming last title, if any, as parent
+                        let parent = res[res.length-1],
+                            level = (parent?.level > 0 ? parent?.level + 1 : h.level);
+                        
+                        // Find the closest parent at specified depth
+                        while (parent?.children?.length && level < h.level) {
+                            parent = parent.children[parent.children.length - 1];
+                        }
+                        
+                        // Add the child
+                        parent?.children?.push(h);
+                    }
+                    
+                    delete h.level;
+                    
+                    return res;
+                }, []),
+            headings = (["mainpage", "module"].includes(kind) ? titles : [{
+                // Add "Usage" catch-all heading if required
+                id: "usage", name: "Usage", section: true, siblings: titles,
                 children: !["class", "namespace"].includes(kind) ? [] : [
                     ...(params?.length ? [{id: "params", name: "Parameters"}] : []),
                     ...(examples?.length ? [{id: "examples", name: "Examples"}] : [])
                 ]
-            }]),
-            // Get titles in description from elements with "id" attribute
-            ...[...JSDOM.fragment(description).querySelectorAll(`[id]`)].map(e => ({
-                level: Number(!e.tagName.toUpperCase().startsWith("H") ? -1 : e.tagName.toUpperCase().replace("H", "")),
-                id: e.getAttribute("id"), name: e.textContent
-            }))
-            // Get rid of any invalid titles
-            .filter(h => (h.level > 0 && !!h.id && !!h.name))
-            .reduce((res, h) => {
-                h.children = (h.children || []);
-                
-                // If top level title, add it to the list
-                if (h.level < 3) {
-                    if (!res.includes(h)) res.push(h);
-                // Otherwise, try find a parent for it
-                } else {
-                    // Always start by assuming last title, if any, as parent
-                    let parent = res[res.length-1],
-                        level = (parent?.level > 0 ? parent?.level + 1 : h.level);
-                    
-                    // Find the closest parent at specified depth
-                    while (parent?.children?.length && level < h.level) {
-                        parent = parent.children[parent.children.length - 1];
-                    }
-                    
-                    // Add the child
-                    parent?.children?.push(h);
-                }
-                
-                delete h.level;
-                
-                return res;
-            }, [])
-        ];
+            }]);
         
         // Add titles for each container section
         for (let c of DocletPage.containers) if (children[c]?.length) {

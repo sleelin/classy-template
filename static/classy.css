@@ -325,8 +325,11 @@ nav ul {
 }
 
 nav ul ul {
-    padding-left: 15px;
     margin-bottom: 12px;
+}
+
+nav ul ul:not(.no-indent) {
+    padding-left: 15px;
     border-left: 2px solid #ddd;
 }
 
