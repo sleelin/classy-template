@@ -1,6 +1,6 @@
 {
   "name": "classy-template",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Improvements on the default JSDoc 3.6 template for modern ESM-style source code.",
   "author": "sleelin",
   "license": "MIT",
