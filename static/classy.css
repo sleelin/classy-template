@@ -575,6 +575,19 @@ tr > th:last-child {
     padding-top: 0;
 }
 
+.returns dt {
+    float: left;
+    padding-right: 15px;
+}
+
+.returns dd {
+    margin-left: 0;
+}
+
+.returns .param-desc:first-letter {
+    text-transform: capitalize;
+}
+
 .description {
     margin-bottom: 1em;
     margin-top: 1em;
@@ -962,12 +975,7 @@ tr > th:last-child {
     }
     
     .returns dt {
-        float: left;
         padding-right: 5px;
-    }
-    
-    .returns dd {
-        margin-left: 0;
     }
     
     .returns .signature .param-type:not(:only-child) {
