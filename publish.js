@@ -410,7 +410,7 @@ class DocletPage {
     }
     
     static containers = ["module", "class", "namespace", "mixin", "external", "interface"];
-    static members = ["member", "function", "constant", "typedef"];
+    static members = ["member", "function", "typedef", "constant"];
     static titles = {
         module: "Module",
         class: "Class",
