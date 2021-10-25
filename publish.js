@@ -507,7 +507,7 @@ class DocletPage {
                     
                     // If so, apply inheritance to inheritable tags
                     if (!!inheritable) {
-                        for (let key of ["description", "examples", "see", "params", "type", "returns"]) {
+                        for (let key of ["description", "examples", "see", "params", "properties", "type", "returns"]) {
                             // Only if the tag isn't already defined on the doclet
                             if (!Object.keys(doclet[key] ?? "").length) doclet[key] = inheritable[key];
                         }
