@@ -13,7 +13,7 @@
         <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
         <?js if (obj.kind !== "namespace" || obj.signature) { ?>
             <div class="class-signature">
-                <pre class="signature name">
+                <pre class="signature name no-highlight">
                     <code>
                         <?js= obj.attribs + (obj.kind === "class" ? "new " : "")
                         + `${obj.memberof ? `<span class="ancestors">${obj.memberof}.</span>` : ""}${obj.name}`
