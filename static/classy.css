@@ -43,13 +43,11 @@ body {
     grid-template-rows: calc(100vh - 60px - env(safe-area-inset-top, 20px));
 }
 
-a, a:visited, a:active {
-    color: #0095dd;
-    text-decoration: none;
-}
-
-a:hover {
-    text-decoration: underline;
+/*******************************
+  General Document Styling
+********************************/
+.clear {
+    clear: both;
 }
 
 .hidden {
@@ -60,12 +58,107 @@ a:hover {
     color: #454545;
 }
 
-header {
-    display: block;
+.important {
+    font-weight: bold;
+    color: #950B02;
+}
+
+.variation {
+    display: none;
 }
 
 tt, code, kbd, samp {
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
+}
+
+/* Link Styling */
+a, a:visited, a:active {
+    color: #0095dd;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Description Styling */
+.description {
+    margin-bottom: 1em;
+    margin-top: 1em;
+}
+
+.description blockquote {
+    border: 1px solid #c1c7d0;
+    border-left-width: 6px;
+    color: #7a869a;
+    padding: 6px 18px 10px;
+    margin: 8px 0;
+}
+
+.description blockquote p {
+    margin: 0;
+}
+
+.class-description {
+    font-size: 130%;
+    line-height: 140%;
+    margin-bottom: 1em;
+    margin-top: 1em;
+}
+
+.class-description:empty {
+    margin: 0;
+}
+
+/* Ancestors Styling */
+.ancestors, .attribs {
+    color: #999;
+}
+
+.ancestors a, .attribs a {
+    color: #999 !important;
+    text-decoration: none;
+}
+
+/* Signature Styling */
+.signature-attributes {
+    font-size: 60%;
+    color: #aaa;
+    font-style: italic;
+    font-weight: lighter;
+}
+
+.type-signature {
+    color: #aaa;
+}
+
+.type-signature + p {
+    display: inline;
+}
+
+.name, .signature {
+    font-family: Consolas, Monaco, 'Andale Mono', monospace;
+}
+
+/* Returns Styling */
+.returns dt {
+    float: left;
+    padding-right: 15px;
+}
+
+.returns dd {
+    margin-left: 0;
+}
+
+.returns .param-desc:first-letter {
+    text-transform: capitalize;
+}
+
+/*******************************
+  Page Header Styling
+********************************/
+header {
+    display: block;
 }
 
 .page-header {
@@ -86,6 +179,7 @@ tt, code, kbd, samp {
     justify-items: center;
 }
 
+/* Package Details */
 .page-header .package-details {
     margin: 0;
     font-size: 2.5rem;
@@ -100,6 +194,7 @@ tt, code, kbd, samp {
     justify-self: start;
 }
 
+/* Package Name */
 .page-header .package-name {
     text-decoration: none !important;
     height: 100%;
@@ -116,14 +211,17 @@ tt, code, kbd, samp {
     padding: 12px 0;
 }
 
+/* Package Version */
 .page-header .package-version {
     font-size: 0.65em;
 }
 
+/* Page Title in Header */
 .page-header .page-title {
     margin: 0;
 }
 
+/* External Links in Header */
 .page-header .page-links {
     height: 100%;
     display: flex;
@@ -146,52 +244,9 @@ tt, code, kbd, samp {
     display: none;
 }
 
-.class-description {
-    font-size: 130%;
-    line-height: 140%;
-    margin-bottom: 1em;
-    margin-top: 1em;
-}
-
-.class-description:empty {
-    margin: 0;
-}
-
-.description blockquote {
-    border: 1px solid #c1c7d0;
-    border-left-width: 6px;
-    color: #7a869a;
-    padding: 6px 18px 10px;
-    margin: 8px 0;
-}
-
-.description blockquote p {
-    margin: 0;
-}
-
-.class-signature pre code, 
-.example pre code, 
-.readme pre code, 
-.description pre code {
-    display: block;
-    padding: 10px 20px;
-    border: 1px solid #ccc;
-    /*white-space: pre-wrap;*/
-}
-
-.class-signature pre, .class-signature pre code {
-    white-space: nowrap;
-}
-
-code {
-    padding: 3px 6px;
-    margin: 0;
-    font-size: 85%;
-    background-color: #afb8c133;
-    border-radius: 6px;
-    overflow: scroll;
-}
-
+/*******************************
+  Main Document Styling
+********************************/
 main {
     height: 100%;
     overflow: scroll;
@@ -220,15 +275,14 @@ main > .content-aside .content-nav {
     height: calc(100vh - 61px);
 }
 
+/*******************************
+  Index Page Styling
+********************************/
 .main-page .readme h2 {
     border-bottom: 1px solid #ccc;
 }
 
-.main-page .readme h6 a {
-    display: block;
-}
-
-.main-page .readme h6 a img {
+.main-page .readme h6 a, .main-page .readme h6 a img {
     display: block;
     margin: 0 auto;
 }
@@ -241,6 +295,9 @@ main > .content-aside .content-nav {
     display: block;
 }
 
+/*******************************
+  Responsive Page Headings
+********************************/
 .section-header .page-title {
     display: none;
     font-size: 1.9em;
@@ -254,6 +311,9 @@ main > .content-aside .content-nav {
     padding-left: 5px;
 }
 
+/*******************************
+  Article Styling
+********************************/
 article dl {
     margin-bottom: 40px;
 }
@@ -262,6 +322,7 @@ article img {
     max-width: 100%;
 }
 
+/* Nested Article Styling */
 article article {
     position: relative;
     padding: 12px 18px;
@@ -283,34 +344,42 @@ article article:before {
     left: 0;
 }
 
+/* Deeply Nested Article Styling */
+article article article {
+    border: none;
+    border-left: 2px solid #ddd;
+    padding: 0 0 0 12px;
+}
+
+article article article:before {
+    display: none;
+}
+
+article article article pre {
+    margin: 0;
+}
+
+/*******************************
+  Section Styling
+********************************/
 section:not(:last-child) {
     margin-bottom: 12px;
 }
 
-.variation {
-    display: none;
-}
-
-.signature-attributes {
-    font-size: 60%;
-    color: #aaa;
+/*******************************
+  Footer Styling
+********************************/
+footer {
+    display: block;
+    padding: 6px;
     font-style: italic;
-    font-weight: lighter;
+    font-size: 90%;
+    text-align: center;
 }
 
-.toc-regular {
-    position: sticky;
-    top: 0;
-}
-
-.toc-tiny {
-    display: none;
-}
-
-.toc-tiny details.content-toc {
-    padding: 0 10px;
-}
-
+/*******************************
+  Shared Nav Styling
+********************************/
 nav {
     display: block;
     box-sizing: border-box;
@@ -341,12 +410,16 @@ nav a.active {
     color: #950B02;
 }
 
+/* Nav Headings Styling */
 nav > h1, nav > h2, nav > h3, nav > h4, nav > h5, nav > h6,
 nav .nav-content > h1, nav .nav-content > h2, nav .nav-content > h3,
 nav .nav-content > h4, nav .nav-content > h5, nav .nav-content > h6 {
     border-bottom: 1px solid #ddd;
 }
 
+/*******************************
+  Page Nav Styling
+********************************/
 nav.page-nav {
     padding: 0 30px 15px 15px;
     width: 100%;
@@ -378,6 +451,22 @@ nav.page-nav ul ul a:not(.active),
 nav.page-nav ul ul a:not(.active):visited,
 nav.page-nav ul ul a:not(.active):active {
     color: #4D4E53;
+}
+
+/*******************************
+  Table of Contents Styling
+********************************/
+.toc-regular {
+    position: sticky;
+    top: 0;
+}
+
+.toc-tiny {
+    display: none;
+}
+
+.toc-tiny details.content-toc {
+    padding: 0 10px;
 }
 
 nav.content-nav {
@@ -412,14 +501,9 @@ nav.content-toc li a + ul{
     margin-top: 8px;
 }
 
-footer {
-    display: block;
-    padding: 6px;
-    font-style: italic;
-    font-size: 90%;
-    text-align: center;
-}
-
+/*******************************
+  Shared Headings Styling
+********************************/
 h1, h2, h3, h4 {
     font-weight: 200;
     margin: 0;
@@ -461,6 +545,7 @@ h6 {
     font-style: italic;
 }
 
+/* Underlined Heading Styling */
 .subsection-title, .description h1, .description h2, .description h3, .description h4 {
     border-bottom: 1px solid #ddd;
 }
@@ -475,6 +560,9 @@ h6 {
     margin-top: 0.5em;
 }
 
+/*******************************
+  Table Styling
+********************************/
 table {
     border-spacing: 0;
     border: 0;
@@ -504,36 +592,9 @@ tr > th:last-child {
     border-right: 1px solid #ddd;
 }
 
-.ancestors, .attribs {
-    color: #999;
-}
-
-.ancestors a, .attribs a {
-    color: #999 !important;
-    text-decoration: none;
-}
-
-.clear {
-    clear: both;
-}
-
-.important {
-    font-weight: bold;
-    color: #950B02;
-}
-
-.type-signature {
-    color: #aaa;
-}
-
-.type-signature + p {
-    display: inline;
-}
-
-.name, .signature {
-    font-family: Consolas, Monaco, 'Andale Mono', monospace;
-}
-
+/*******************************
+    Details Section Styling
+********************************/
 .details dl {
     margin: 0;
     border-left: 2px solid #DDD;
@@ -569,34 +630,54 @@ tr > th:last-child {
     display: flex;
     justify-content: flex-start;
     flex-wrap: wrap;
+    padding: 3px 6px;
 }
 
 .details .object-value {
     padding-top: 0;
 }
 
-.returns dt {
-    float: left;
-    padding-right: 15px;
-}
-
-.returns dd {
-    margin-left: 0;
-}
-
-.returns .param-desc:first-letter {
-    text-transform: capitalize;
-}
-
-.description {
-    margin-bottom: 1em;
-    margin-top: 1em;
-}
-
+/*******************************
+  Code Block Styling
+********************************/
 .code-caption {
     font-style: italic;
     font-size: 107%;
     margin: 0;
+}
+
+.class-signature pre code,
+.example pre code,
+.readme pre code,
+.description pre code {
+    display: block;
+    padding: 10px 20px;
+    border: 1px solid #ccc;
+    /*white-space: pre-wrap;*/
+}
+
+.class-signature pre, .class-signature pre code {
+    white-space: nowrap;
+}
+
+code {
+    padding: 3px 6px;
+    margin: 0;
+    font-size: 85%;
+    border-radius: 6px;
+    overflow: scroll;
+}
+
+code, .hljs {
+    background-color: #afb8c133;
+}
+
+.hljs-attr, .hljs-variable.constant_ {
+    color: #8959a8;
+}
+
+.hljs-string {
+    color: #718c00;
 }
 
 .prettyprint code span.line {
@@ -630,6 +711,9 @@ tr > th:last-child {
     user-select: text;
 }
 
+/*******************************
+  Inline Code Styling
+********************************/
 .params .name, .props .name, .name code,
 .readme .description code {
     color: #4D4E53;
@@ -649,6 +733,9 @@ tr > th:last-child {
     padding-bottom: 0;
 }
 
+/*******************************
+  Small Display Nav Styling
+********************************/
 .tiny-page-nav-toggle {
     position: relative;
     display: flex;
@@ -719,11 +806,13 @@ tr > th:last-child {
 }
 
 @media (max-width: 1280px) {
+    /* Reduce guttering */
     :root {
         --gutter-width-left: 225px;
         --gutter-width-right: 205px;
     }
     
+    /* Reduce whitespace and font size */
     .page-header .package-details {
         grid-column-gap: 0;
     }
@@ -734,11 +823,13 @@ tr > th:last-child {
 }
 
 @media (max-width: 1176px) {
+    /* Reduce guttering */
     :root {
         --gutter-width-left: 215px;
         --gutter-width-right: 200px;
     }
     
+    /* Reduce logo and title size */
     .page-header .package-name img {
         padding: 16px 0;
     }
@@ -747,14 +838,17 @@ tr > th:last-child {
         font-size: 1.7em;
     }
     
+    /* Reduce content font size */
     nav, .content-container, footer {
         font-size: 0.8em;
     }
     
+    /* Reduce details guttering */
     .details dl .detail {
         grid-template-columns: 80px 1fr;
     }
     
+    /* Wrap param types in tables */
     td.type .param-type {
         display: block;
     }
@@ -765,26 +859,30 @@ tr > th:last-child {
 }
 
 @media (max-width: 1080px) {
+    /* Reduce guttering */
     :root {
         --gutter-width-left: 200px;
     }
     
-     nav.page-nav {
-         padding: 0 15px 0 10px;
-     }
-     
-     nav.page-nav .nav-content > ul {
-         padding-left: 0;
-     }
+    nav.page-nav {
+        padding: 0 15px 0 10px;
+    }
+    
+    nav.page-nav .nav-content > ul {
+        padding-left: 0;
+    }
 }
 
 @media (max-width: 952px) {
+    /* Remove left guttering */
     :root {
         --gutter-width-left: 0px;
     }
     
+    /* Display body content inline */
     body {
         grid-template-columns: 100%;
+        grid-template-rows: auto;
     }
     
     main > .content-container {
@@ -793,6 +891,7 @@ tr > th:last-child {
         width: auto;
     }
     
+    /* Enable wide content scrolling */
     .params .subsection-content, .props dd {
         overflow: scroll;
         position: relative;
@@ -802,6 +901,12 @@ tr > th:last-child {
         padding-bottom: 10px;
     }
     
+    .params .subsection-content table,
+    .props table {
+        position: relative;
+    }
+    
+    /* Enable left scroll gutter */
     .params .subsection-content:before,
     .props dd:before {
         position: sticky;
@@ -811,22 +916,6 @@ tr > th:last-child {
         bottom: 0;
         left: 0;
         border-left: 1px dashed #aaa;
-    }
-    
-    .params .subsection-content:after,
-    .props dd:after {
-        position: sticky;
-        content: "";
-        display: flex;
-        top: 0;
-        bottom: 0;
-        right: 0;
-        border-right: 1px dashed #aaa;
-    }
-    
-    .params .subsection-content table,
-    .props table {
-        position: relative;
     }
     
     .params .subsection-content table:before,
@@ -841,6 +930,23 @@ tr > th:last-child {
         z-index: 2;
     }
     
+    .params .subsection-content table tr :first-child,
+    .props table tr :first-child {
+        border-left-width: 0;
+    }
+    
+    /* Enable right scroll gutter */
+    .params .subsection-content:after,
+    .props dd:after {
+        position: sticky;
+        content: "";
+        display: flex;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        border-right: 1px dashed #aaa;
+    }
+    
     .params .subsection-content table:after,
     .props table:after {
         position: absolute;
@@ -853,22 +959,14 @@ tr > th:last-child {
         z-index: 2;
     }
     
-    .params .subsection-content table tr :first-child,
-    .props table tr :first-child {
-        border-left-width: 0;
-    }
-    
     .params .subsection-content table tr :last-child,
     .props table tr :last-child {
         border-right-width: 0;
     }
     
+    /* Move page title position */
     .page-header {
         grid-template-columns: 1fr 1fr;
-    }
-    
-    .page-header .page-links .page-nav-toggle {
-        display: flex;
     }
     
     .page-header .page-title {
@@ -877,6 +975,11 @@ tr > th:last-child {
     
     .section-header .page-title {
         display: block;
+    }
+    
+    /* Enable tiny nav */
+    .page-header .page-links .page-nav-toggle {
+        display: flex;
     }
     
     nav.page-nav {
@@ -913,10 +1016,12 @@ tr > th:last-child {
 }
 
 @media (max-width: 648px) {
+    /* Remove right guttering */
     :root {
         --gutter-width-right: 0px;
     }
     
+    /* Display all content inline */
     main > .content-container {
         grid-template-columns: 100%;
     }
@@ -926,13 +1031,14 @@ tr > th:last-child {
         margin-right: 15px;
     }
     
+    main > footer {
+        grid-row: 3;
+    }
+    
+    /* Display table of contents first */
     main > .content-aside {
         grid-row-end: 1;
         margin: 15px 15px 0;
-    }
-    
-    main > footer {
-        grid-row: 3;
     }
     
     .toc-regular {
@@ -943,12 +1049,14 @@ tr > th:last-child {
         display: block;
     }
     
+    /* Hide page title in section content */
     .section-header .page-title {
         display: none;
     }
 }
 
 @media (max-width: 580px) {
+    /* Remove outer padding from content */
     main > .content-container {
         margin: 15px 0 0;
         padding: 12px 24px 12px 18px;
@@ -964,16 +1072,19 @@ tr > th:last-child {
 }
 
 @media (max-width: 480px) {
+    /* Don't overflow names anymore */
     header > .name {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
     
+    /* Hide type signatures */
     header > .name .type-signature:last-child {
         display: none;
     }
     
+    /* Wrap method returns signatures */
     .returns dt {
         padding-right: 5px;
     }
