@@ -19,10 +19,11 @@ class PublishUtils {
             layout: !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile)),
             find: (spec) => data(spec).get(),
             linkto: helper.linkto,
+            htmlsafe: helper.htmlsafe,
             resolveAuthorLinks: helper.resolveAuthorLinks,
             typeString: PublishUtils.typeString,
             tutoriallink: PublishUtils.linkTutorial,
-            htmlsafe: helper.htmlsafe,
+            summarise: PublishUtils.summarise,
             packageData: packageData,
             sourceFiles: sourceFiles
         });
@@ -82,6 +83,10 @@ class PublishUtils {
     
     static linkTutorial(t) {
         return helper.toTutorial(t, null, {tag: "em", classname: "disabled", prefix: "Tutorial: "});
+    }
+    
+    static summarise({summary}) {
+        return (summary.startsWith("<ul>") ? JSDOM.fragment(summary).firstElementChild.outerHTML : `<ul><li>${summary}</li></ul>`);
     }
     
     static generateTutorials({children}) {
