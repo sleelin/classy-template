@@ -9,53 +9,90 @@ const JSDocTemplate = require("jsdoc/template").Template;
 const JSDocFilter = require("jsdoc/src/filter").Filter;
 const JSDocScanner = require("jsdoc/src/scanner").Scanner;
 const {JSDOM} = require("jsdom");
+const outdir = path.normalize(env.opts.destination);
 
-let outdir = path.normalize(env.opts.destination);
-let view;
-
+/**
+ * Utilities used to help prepare doclet pages for publishing
+ * @namespace
+ */
 class PublishUtils {
+    /**
+     * Instantiate the JSDoc Template and make useful details available when rendering
+     * @param {String} templatePath - path to the directory containing the template files
+     * @param {String} layoutFile - name of the file to use as the base layout of the template
+     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {PackageData} packageData - details about the package and template configuration
+     * @param {SourceFilesData} sourceFiles - details about how source files are being handled
+     * @returns {BootstrappedTemplate} an instance of a JSDoc Template, with useful details and methods added
+     */
     static bootstrapTemplate(templatePath, layoutFile, data, packageData, sourceFiles) {
+        const layout = !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile));
+        const find = (spec) => data(spec).get();
+        const {linkto, htmlsafe, resolveAuthorLinks} = helper;
+        const {typeString, linkTutorial: tutoriallink, summarise} = PublishUtils;
+    
+        /**
+         * @typedef {Template} BootstrappedTemplate
+         * @property {String} layout - path to the file to use as the base layout of the template
+         * @property {Function} find - method for querying and reading raw doclet data from within the template
+         * @property {PackageData} packageData - details about the package and template configuration
+         * @property {SourceFilesData} sourceFiles - details about how source files are being handled
+         * @property {typeof helper.linkto} linkto - method for linking to other doclet pages, from JSDoc template helper library
+         * @property {typeof helper.htmlsafe} htmlsafe - method for rendering raw HTML safely, from JSDoc template helper library
+         * @property {typeof helper.resolveAuthorLinks} resolveAuthorLinks - method for linking to a doclet's author, from JSDoc template helper library
+         * @property {typeof PublishUtils#typeString} typeString - method for generating type strings, from PublishUtils class
+         * @property {typeof PublishUtils#linkTutorial} tutoriallink - method for linking to tutorial pages, from PublishUtils class
+         * @property {typeof PublishUtils#summarise} summarise - method for rendering doclet summaries, from PublishUtils class
+         * @property {String} [boilerplateNav] - generated HTML for the main navigation menu of a page
+         */
         return Object.assign(new JSDocTemplate(path.join(templatePath, "tmpl")), {
-            layout: !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile)),
-            find: (spec) => data(spec).get(),
-            linkto: helper.linkto,
-            htmlsafe: helper.htmlsafe,
-            resolveAuthorLinks: helper.resolveAuthorLinks,
-            typeString: PublishUtils.typeString,
-            tutoriallink: PublishUtils.linkTutorial,
-            summarise: PublishUtils.summarise,
-            packageData: packageData,
-            sourceFiles: sourceFiles
+            // Expose doclets, package data, and source files to template
+            layout, find, packageData, sourceFiles,
+            // Expose useful helper functions to template
+            linkto, htmlsafe, resolveAuthorLinks,
+            // Expose useful PublishUtils functions and values to template
+            typeString, tutoriallink, summarise
         });
     }
     
+    /**
+     * Collect a list of static files required by a template, and copy them to the output location
+     * @param {String} templatePath - path to the directory containing the template files
+     * @param {Object} [defaultStatics] - static files specified by the JSDoc default template config for inclusion in output
+     * @param {String[]} [defaultStatics.paths=[]] - list of paths to static files to be copied
+     * @param {String[]} [defaultStatics.include=[]] - list of path filters to static files to be copied
+     * @param {Object} [classyStatics] - static files specified by classy template config for inclusion in output
+     * @param {String} [classyStatics.logo] - path to the logo file to be copied to output destination
+     * @param {String} [classyStatics.gitImage] - path to the git image file to be copied to output destination
+     */
     static handleStatics(templatePath, defaultStatics, classyStatics) {
         // Get list of files to copy from template's static directory
-        let fromDir = path.join(templatePath, "static"),
-            staticFiles = JSDocFS.ls(fromDir, 3).map(fn => ({sourcePath: fn, fromDir: fromDir}));
+        const fromDir = path.join(templatePath, "static");
+        const staticFiles = JSDocFS.ls(fromDir, 3).map(sourcePath => ({sourcePath, fromDir}));
         
         // Get list of user-specified static files to copy
-        if (defaultStatics) {
-            let {paths, include: staticFilePaths = (paths || [])} = defaultStatics || {},
-                staticFileFilter = new JSDocFilter(defaultStatics),
-                staticFileScanner = new JSDocScanner();
+        if (defaultStatics?.constructor === Object) {
+            const {paths = [], include: staticFilePaths = paths} = defaultStatics;
+            const staticFileFilter = new JSDocFilter(defaultStatics);
+            const staticFileScanner = new JSDocScanner();
             
             // Go through user-specified static files
             for (let filePath of staticFilePaths) {
-                let fromDir = path.resolve(env.pwd, filePath);
+                const fromDir = path.resolve(env.pwd, filePath);
                 
                 // Add the static file to the list
                 staticFiles.push(...staticFileScanner
                     .scan([fromDir], 10, staticFileFilter)
-                    .map(fn => ({sourcePath: fn, fromDir: JSDocFS.toDir(fromDir)})));
+                    .map(sourcePath => ({sourcePath, fromDir: JSDocFS.toDir(fromDir)})));
             }
         }
         
-        // Copy static assets from
-        if (classyStatics) {
-            let {logo, gitImage} = classyStatics;
+        // Add any logo or git image to list of static files
+        if (classyStatics?.constructor === Object) {
+            const {logo, gitImage} = classyStatics;
             
             if (typeof logo === "string") {
+                // Add the logo file to the list, if specified
                 staticFiles.push({
                     sourcePath: path.resolve(env.pwd, logo),
                     fileName: path.join("assets", `logo${path.extname(logo)}`),
@@ -64,6 +101,7 @@ class PublishUtils {
             }
             
             if (typeof gitImage === "string") {
+                // Add the git image file to the list, if specified
                 staticFiles.push({
                     sourcePath: path.join(templatePath, "assets", gitImage),
                     fileName: path.join("assets", gitImage),
@@ -81,95 +119,143 @@ class PublishUtils {
         }
     }
     
+    /**
+     * Generate an HTML link to the specified tutorial
+     * @param {Tutorial} t - tutorial to generate the link to
+     * @returns {String} HTML link to the specified tutorial
+     */
     static linkTutorial(t) {
         return helper.toTutorial(t, null, {tag: "em", classname: "disabled", prefix: "Tutorial: "});
     }
     
+    /**
+     * Wrap a doclet's summary tag in an unordered list element, if not already wrapped by one
+     * @param {String} summary - contents of a doclet's summary tag to return as an unordered list element 
+     * @returns {String} either the existing unordered list summary, or a newly created list with the summary as its only item
+     */
     static summarise({summary}) {
         return (summary.startsWith("<ul>") ? JSDOM.fragment(summary).firstElementChild.outerHTML : `<ul><li>${summary}</li></ul>`);
     }
     
-    static generateTutorials({children}) {
+    /**
+     * Generate all specified tutorials using the given template
+     * @param {Template} template - JSDoc Template to use when rendering tutorials
+     * @param {Tutorial[]} children - tutorials whose content are contained within the given parent tutorial
+     */
+    static generateTutorials(template, {children}) {
         for (let child of children) {
-            fs.writeFileSync(
-                path.join(outdir, helper.tutorialToUrl(child.name)),
-                helper.resolveLinks(view.render("masters/tutorial.tmpl", {
-                    title: `Tutorial: ${child.title}`,
-                    header: child.title,
-                    content: child.parse(),
-                    children: child.children
-                })),
-                "utf8"
-            );
+            // Construct the data from the tutorial to provide to the template
+            const {title: header, children} = child;
+            const title = `Tutorial: ${header}`;
+            const templateData = {title, header, children, content: child.parse()};
+            // Render the tutorial page and determine where it should be output
+            const content = helper.resolveLinks(template.render("masters/tutorial.tmpl", templateData));
+            const filepath = path.join(outdir, helper.tutorialToUrl(child.name));
             
-            PublishUtils.generateTutorials(child);
+            // Write the output to the filesystem and proceed to handle any descendant tutorials
+            fs.writeFileSync(filepath, content, "utf8");
+            PublishUtils.generateTutorials(template, child);
         }
     }
     
+    /**
+     * Get a standardised version of a value's type string
+     * @param {String} name - the existing type string to standardise
+     * @returns {String} the standardised version of the value's type string
+     */
     static typeString(name) {
         // Turn clojure array syntax back into JSDoc array syntax!
         return name.replace(/Array\.(?:<|&lt;)(.*)>/g, "$1[]").replace(/(.*>)(?:.*?)~(.*)/g, "$1~$2");
     }
     
+    /**
+     * Standardise and make render-safe a list of type strings for a given doclet
+     * @param {String[]} type - list of existing type strings to standardise and make safe for rendering
+     * @returns {String} the standardised version of each type string for the given doclet
+     */
     static typeStrings({type}) {
         return (type?.names || []).map(name => PublishUtils.typeString(helper.linkto(name, helper.htmlsafe(name)))).join(", ");
     }
     
+    /**
+     * Concatenate and make render-safe a list of attribute strings
+     * @param {String[]} attribs - the list of attribute strings to concatenate and make safe for rendering
+     * @returns {String} the concatenated and render-safe attributes list string value
+     */
     static attribsString(attribs) {
         return attribs.length ? helper.htmlsafe(`(${attribs.join(", ")})`) : "";
     }
     
-    static buildBoilerplateNav(view, data, tutorials, apiEntry) {
-        let nav = [],
-            seen = {},
-            members = Object.assign(helper.getMembers(data), {tutorials: tutorials}),
-            linkFns = {
-                Externals: (ln, name) =>  helper.linkto(ln, name.replace(/(^"|"$)/g, '')),
-                Tutorials: (ln, name) => PublishUtils.linkTutorial(name)
-            };
+    /**
+     * Generate the HTML for the main navigation menu of a page
+     * @param {BootstrappedTemplate} template - JSDoc Template to assign the generated HTML to
+     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {Tutorial[]} tutorials - tutorials to include in the main navigation menu of a page
+     * @param {String} [apiEntry] - class or namespace to treat as the entrypoint when generating structured navigation for a page
+     */
+    static buildBoilerplateNav(template, data, tutorials, apiEntry) {
+        const scopes = ["Modules", "Namespaces", "Classes", "Interfaces", "Events", "Mixins", "Externals"];
+        const {globals, ...members} = helper.getMembers(data);
+        const nav = [];
+        const seen = {};
         
         nav.push(...[
-            PublishUtils.buildStructuredNav({scope: "global", kind: DocletPage.containers}, data, seen, 3, apiEntry),
-            ...["Modules", "Namespaces", "Classes", "Interfaces", "Events", "Mixins", "Externals", "Tutorials"].map(scope =>
-                PublishUtils.buildMemberNav(members[scope.toLowerCase()], scope, scope === "Tutorials" ? {} : seen, linkFns[scope] ?? helper.linkto)),
+            // Generate the structured navigation menu for the given API entrypoint
+            PublishUtils.buildStructuredNav(data, data({scope: "global", kind: DocletPage.containers}).get(), seen, 3, apiEntry),
+            // Generate navigation menu entries for any remaining unseen global members
+            ...scopes.map(scope => PublishUtils.buildMemberNav(scope, members[scope.toLowerCase()], seen, helper.linkto)),
+            // Generate navigation menu entries for any tutorials
+            PublishUtils.buildMemberNav("Tutorials", tutorials, {}, (ln, name) => PublishUtils.linkTutorial(name))
         ]);
         
-        if (members.globals.length) {
-            let globalNav = members.globals.map(m => {
-                let {kind, longname, name} = m,
-                    out = ((String(kind) !== "typedef" && !seen[longname]) ? `<li>${helper.linkto(longname, name)}</li>` : "");
-                
-                seen[longname] = true;
-                return out;
-            }).join("");
+        // Add menu entries for any global doclets with no more specific memberships
+        if (globals.length) {
+            let globalNav = "";
             
-            // Turn the heading into a link so you can actually get to the global page
-            nav.push(!globalNav ? `<h3>${helper.linkto("global", "Global")}</h3>` : `<h3>Global</h3><ul>${globalNav}</ul>`);
+            for (let {kind, longname, name} of globals) {
+                globalNav += ((String(kind) !== "typedef" && !seen[longname]) ? `<li>${helper.linkto(longname, name)}</li>` : "");
+                seen[longname] = true;
+            }
+            
+            // Turn the heading into a link, so you can actually get to the global page
+            nav.push(!globalNav ? `<h3>${helper.linkto("global", "Global")}</h3>` : `<h3>Globals</h3><ul>${globalNav}</ul>`);
         }
         
         // Assign!
-        view.boilerplateNav = nav.join("");
+        template.boilerplateNav = nav.join("");
     }
     
-    static buildStructuredNav(spec, data, seen, depth, apiEntry) {
-        let listContent = "",
-            items = data(spec).get();
+    /**
+     * Generate the HTML for the structured API section of the main navigation menu of a page
+     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {ClassyDoclet[]} items - collection of items to generate structured navigation menu entries for
+     * @param {Object.<string, boolean>} seen - object keeping track of whether a given item has already had a menu entry generated
+     * @param {Number} depth - how deep the current set of menu entries are nested in the overall menu structure
+     * @param {String} [apiEntry] - class or namespace to treat as the entrypoint of the structured navigation
+     * @returns {String} generated HTML for the structured API section of the main navigation menu of a page
+     */
+    static buildStructuredNav(data, items, seen, depth, apiEntry) {
+        let listContent = "";
         
+        // If there's only one item, and that item is the API entrypoint, add the API heading and menu items
         if (!!apiEntry && items.length === 1 && items[0].longname === apiEntry) {
-            let item = items.pop();
+            const [item] = items;
+            
             if (!(seen[item.longname])) {
                 seen[item.longname] = true;
                 
                 listContent += `<h${depth}>API</h${depth}>`;
-                listContent += PublishUtils.buildStructuredNav({memberof: item.longname, kind: ["namespace", "class"]}, data, seen, depth + 1);
+                listContent += PublishUtils.buildStructuredNav(data, data({memberof: item.longname, kind: ["namespace", "class"]}).get(), seen, depth + 1);
                 
                 return listContent;
             }
-        } else {
+        }
+        // Otherwise, go through and handle the structured menu entries for each item
+        else {
             for (let item of items) {
                 if (!(seen[item.longname])) {
-                    let title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, '')),
-                        children = PublishUtils.buildStructuredNav({memberof: item.longname, kind: ["namespace", "class"]}, data, seen, depth + 1);
+                    const title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, ''));
+                    const children = PublishUtils.buildStructuredNav(data, data({memberof: item.longname, kind: ["namespace", "class"]}).get(), seen, depth + 1);
                     
                     listContent += `<li>${((depth < 5 || children.length) ? `<h${depth}>${title}</h${depth}>` : title) + children}</li>`;
                     seen[item.longname] = true;
@@ -180,82 +266,103 @@ class PublishUtils {
         }
     }
     
-    static buildMemberNav(items, heading, seen, linktoFn) {
-        let nav = items.map(item => {
+    /**
+     * Generate HTML for the main navigation menu for a given heading and set of menu items
+     * @param {String} heading - title to use for the collection of menu entries
+     * @param {ClassyDoclet[]} items - collection of items under the specified heading to generate navigation menu entries for
+     * @param {Object.<string, boolean>} seen - object keeping track of whether a given item has already had a menu entry generated
+     * @param {Function} linktoFn - method to call to generate the HTML link to an item
+     * @returns {String} generated HTML for the main navigation menu for a given heading and set of menu items
+     */
+    static buildMemberNav(heading, items, seen, linktoFn) {
+        let nav = "";
+        
+        for (let item of items) {
             if (!item.longname) {
-                return `<li>${linktoFn("", item.name)}</li>`;
+                nav += `<li>${linktoFn("", item.name)}</li>`;
             } else if (!seen[item.longname]) {
-                let displayName = env.conf.templates.default.useLongnameInNav ? item.longname : item.name;
+                const displayName = env.conf.templates.default.useLongnameInNav ? item.longname : item.name;
+                
                 seen[item.longname] = true;
-                return `<li>${linktoFn(item.longname, displayName.replace(/\b(module|event):/g, ''))}</li>`;
+                nav += `<li>${linktoFn(item.longname, displayName.replace(/\b(module|event):/g, ''))}</li>`;
             }
-        }).join("");
+        }
         
         return nav.length ? `<h3>${heading}</h3><ul>${nav}</ul>` : "";
     }
     
-    static buildTocNav(items = [], inline = false) {
-        let listContent = "";
-        
-        for (let item of items) {
-            // Build a list of links for each child, as well as their children
-            let title = (!!item.id ? `<a href="#${item.id}">${item.name}</a>` : item.name),
-                siblings = PublishUtils.buildTocNav(item.siblings, true),
-                children = PublishUtils.buildTocNav(item.children);
-            
-            listContent += `<li>${(item.section ? `<h5 class="toc-section">${title}</h5>` : title) + siblings + children}</li>`;
-        }
-        
-        return listContent.length ? `<ul${inline ? ` class="no-indent"` : ""}>${listContent}</ul>` : "";
-    }
+    /**
+     * @typedef {Object} TOCHeading
+     * @property {String} id - the value used as the menu item's id attribute
+     * @property {String} name - the content used as the menu item's inner text
+     * @property {Boolean} section - whether emphasis is added to the menu item
+     * @property {TOCHeading[]} siblings - a list of other menu items adjacent to this one
+     * @property {TOCHeading[]} children - a list of menu items that are descendants of this one
+     */
     
+    /**
+     * Generate a structured list of headings to use for a page's table of contents menu
+     * @param {DocletPage} page - the page whose content should be used to build the table of contents menu
+     * @returns {TOCHeading[]} a list of items describing the table of contents menu of a page
+     */
     static getTocStructure(page) {
-        let {kind, description, doclets: children, examples, params} = page, 
-            // Get titles in description from elements with "id" attribute
-            titles = [...JSDOM.fragment(description).querySelectorAll(`[id]`)].map(e => ({
-                    level: Number(!e.tagName.toUpperCase().startsWith("H") ? -1 : e.tagName.toUpperCase().replace("H", "")),
-                    id: e.getAttribute("id"), name: e.textContent
-                }))
-                // Get rid of any invalid titles
-                .filter(h => (h.level > 0 && !!h.id && !!h.name))
-                .reduce((res, h) => {
-                    h.children = (h.children || []);
-                    
-                    // If top level title, add it to the list
-                    if (h.level < 3) {
-                        if (!res.includes(h)) res.push(h);
+        const {kind, description, doclets: children, examples, params, properties} = page;
+        // Get titles in description from elements with "id" attribute
+        const titles = [...JSDOM.fragment(description).querySelectorAll(`[id]`)].map(e => ({
+                id: e.getAttribute("id"), name: e.textContent, children: [],
+                // Get the heading level from the number in the element tag
+                level: Number(!e.tagName.toUpperCase().startsWith("H") ? -1 : e.tagName.toUpperCase().replace("H", ""))
+            }))
+            // Get rid of any invalid titles
+            .filter(h => (h.level > 0 && !!h.id && !!h.name))
+            // Go through and give them structure
+            .reduce((titles, h) => {
+                // If top level title, add it to the list
+                if (h.level < 3) {
+                    if (!titles.includes(h)) titles.push(h);
                     // Otherwise, try find a parent for it
-                    } else {
-                        // Always start by assuming last title, if any, as parent
-                        let parent = res[res.length-1],
-                            level = (parent?.level > 0 ? parent?.level + 1 : h.level);
-                        
-                        // Find the closest parent at specified depth
-                        while (parent?.children?.length && level < h.level) {
-                            parent = parent.children[parent.children.length - 1];
-                        }
-                        
-                        // Add the child
-                        parent?.children?.push(h);
+                } else {
+                    // Always start by assuming last title, if any, as parent
+                    let parent = titles[titles.length-1],
+                        level = (parent?.level > 0 ? parent?.level + 1 : h.level);
+            
+                    // Find the closest parent at specified depth
+                    while (parent?.children?.length && level < h.level) {
+                        parent = parent.children[parent.children.length - 1];
                     }
-                    
-                    delete h.level;
-                    
-                    return res;
-                }, []),
-            headings = (["mainpage", "module"].includes(kind) ? titles : [{
-                // Add "Usage" catch-all heading if required
-                id: "usage", name: "Usage", section: true, siblings: titles,
-                children: !["class", "namespace"].includes(kind) ? [] : [
-                    ...(params?.length ? [{id: "params", name: "Parameters"}] : []),
-                    ...(examples?.length ? [{id: "examples", name: "Examples"}] : [])
-                ]
-            }]);
+            
+                    // Add the child
+                    parent?.children?.push(h);
+                }
+        
+                delete h.level;
+        
+                return titles;
+            }, []);
+        
+        // Start by assuming headings may just come from titles
+        const headings = (["mainpage", "module"].includes(kind) ? titles : ( 
+            // If headings weren't sourced from titles in the description, add a few basic entries
+            ["globalobj"].includes(kind) ? [] : [
+                // Add "Description" heading to cover summary and any extended description 
+                {id: "description", name: "Description", section: true, siblings: titles},
+                // Add "Usage" heading for details if required
+                {
+                    id: "usage", name: "Usage", section: true,
+                    children: !["class", "namespace"].includes(kind) ? [] : [
+                        {id: "details", name: "Details"},
+                        ...(params?.length ? [{id: "params", name: "Parameters"}] : []),
+                        ...(properties?.length ? [{id: "properties", name: "Properties"}] : []),
+                        ...(examples?.length ? [{id: "examples", name: "Examples"}] : [])
+                    ]
+                }
+            ]
+        ));
         
         // Add titles for each container section
         for (let c of DocletPage.containers) if (children[c]?.length) {
-            let name = `${DocletPage.titles[c]}${c === "class" ? "es" : "s"}`;
-            headings.push({id: name.toLowerCase(), name: name, section: true});
+            const name = `${DocletPage.titles[c]}${c === "class" ? "es" : "s"}`;
+            headings.push({id: name.toLowerCase(), name, section: true});
         }
         
         // Add titles for each member section
@@ -270,18 +377,51 @@ class PublishUtils {
         return headings;
     }
     
+    /**
+     * Generate HTML for the table of contents menu of a page
+     * @param {TOCHeading[]} items - collection of items to generate table of contents menu entries for
+     * @param {Boolean} [inline=false] - whether list items should be indented in the menu
+     * @returns {String} the HTML list of links for the table of contents of a page, with headings
+     */
+    static buildTocNav(items = [], inline = false) {
+        let listContent = "";
+        
+        for (let item of items) {
+            // Build a list of links for each child, as well as their children
+            const title = (!!item.id ? `<a href="#${item.id}">${item.name}</a>` : item.name);
+            const siblings = PublishUtils.buildTocNav(item.siblings, true);
+            const children = PublishUtils.buildTocNav(item.children);
+            
+            listContent += `<li>${(item.section ? `<h5 class="toc-section">${title}</h5>` : title) + siblings + children}</li>`;
+        }
+        
+        return listContent.length ? `<ul${inline ? ` class="no-indent"` : ""}>${listContent}</ul>` : "";
+    }
+    
+    /**
+     * @typedef {Object} PackageRepositoryData
+     * @property {String} type - repository version control provider type
+     * @property {String} url - location of the repository hosted by a version control provider
+     */
+    
+    /**
+     * Get details of a package's repository located on a hosted git provider
+     * @param {String} packagePath - path to the repository's main package.json file
+     * @param {String|PackageRepositoryData} repository - location or details of the repository on a hosted git provider
+     * @returns {HostedGitData} configuration details for a given hosted git provider
+     */
     static getRepository(packagePath, repository) {
         // Break if package.json or repository are undefined
         if (!repository || !packagePath) return {};
         
         // Only look for .git folders next to specified package.json
-        let gitDir = path.join(path.dirname(path.resolve(env.pwd, packagePath)), ".git");
+        const gitDir = path.join(path.dirname(path.resolve(env.pwd, packagePath)), ".git");
         
         // Only continue if git dir exists
         if (fs.existsSync(gitDir)) {
             try {
-                let ref = fs.readFileSync(path.join(gitDir, "HEAD"), "utf8").replace("ref: ", "").trim(),
-                    commitish = fs.readFileSync(path.join(gitDir, ref), "utf8").trim();
+                const ref = fs.readFileSync(path.join(gitDir, "HEAD"), "utf8").replace("ref: ", "").trim();
+                const commitish = fs.readFileSync(path.join(gitDir, ref), "utf8").trim();
                 
                 return PublishUtils.resolveGitHost(repository, commitish) ?? {};
             } catch (ex) {
@@ -292,7 +432,32 @@ class PublishUtils {
         return {};
     }
     
-    // Map common Git hosts to their source file path link format and line tag prefix
+    /**
+     * Details about config and source files located on a hosted git provider
+     * @typedef {Object} HostedGitData
+     * @property {String} [name] - hosted git provider name (e.g. GitHub, Bitbucket, GitLab, etc.)
+     * @property {String} [link] - location of the main page of the repository on the hosted git provider
+     * @property {String} [image] - name of the default file to use in the repository link in the page header
+     * @property {String} [path] - URL to use as base path for source file links on the hosted git provider
+     * @property {String} [line] - format of suffix used by hosted git provider to link directly to specific lines in a source file
+     */
+    
+    /**
+     * Function to resolve details about config and source files located on a hosted git provider
+     * @callback HostedGitDataResolver
+     * @param {String} path - user/organisation and repository name used to locate the repository on the hosted git provider
+     * @param {String} commitish - a commit hash or similar string that identifies exactly what version of a source file should be linked to
+     * @returns {HostedGitData} configuration details for a given hosted git provider
+     */
+    
+    /**
+     * Methods to map common Git hosts to their source file path link format and line tag prefix
+     * @type {Object}
+     * @property {HostedGitDataResolver} github - method used to resolve details of a repository hosted on GitHub
+     * @property {HostedGitDataResolver} bitbucket - method used to resolve details of a repository hosted on Bitbucket
+     * @property {HostedGitDataResolver} gitlab - method used to resolve details of a repository hosted on GitLab
+     * @private
+     */
     static #gitHosts = {
         github: (path, commitish) => ({
             name: "GitHub", link: `https://github.com/${path}`, image: "github.png",
@@ -308,16 +473,22 @@ class PublishUtils {
         })
     }
     
+    /**
+     * Extract details about, and resolve configuration for source files located on a hosted git provider
+     * @param {String|PackageRepositoryData} repository - location or details of the repository on a hosted git provider
+     * @param {String} commitish - a commit hash or similar string that identifies exactly what version of a source file should be linked to
+     * @returns {HostedGitData} configuration details for a given hosted git provider
+     */
     static resolveGitHost(repository, commitish) {
         if (typeof repository === "string") {
             // Get repository details if specified in short form
-            let [host, repo = host] = repository.split(":");
+            const [host, repo = host] = repository.split(":");
             
             // Get the host's path details as above
             return PublishUtils.#gitHosts[host === repo ? "github" : host](repo, commitish);
         } else if (repository?.type === "git" && !!repository?.url) {
             // Extract git host and repository details from full link
-            let target = new URL(repository.url.replace(/^(?:git\+)?(.*?)(?:\.git)?$/, "$1"));
+            const target = new URL(repository.url.replace(/^(?:git\+)?(.*?)(?:\.git)?$/, "$1"));
             
             // Then try again with a string value instead
             return PublishUtils.resolveGitHost(`${target.host.split(".").shift()}:${target.pathname.substring(1)}`, commitish);
@@ -325,97 +496,49 @@ class PublishUtils {
     }
 }
 
+/**
+ * Page representation of a doclet, as well as utility methods for preparing the page or pages
+ * @extends ClassyDoclet
+ */
 class DocletPage {
-    static #pages = new Map();
-    static #sources = new Map();
+    /**
+     * Whether links to other doclet pages should be resolved when the current page is generated
+     * @type {Boolean}
+     * @instance
+     * @private
+     */
     #resolveLinks;
     
-    constructor(source, children = [], resolveLinks) {
-        if (DocletPage.#pages.has(source))
-            return DocletPage.#pages.get(source);
-        
-        DocletPage.#pages.set(source, this);
-        Object.assign(this, source);
-        
-        this.#resolveLinks = resolveLinks;
-        this.env = env;
-        this.doclet = source;
-        this.path = source?.meta?.source;
-        this.link = helper.createLink(source);
-        this.heading = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]}: ` : "")
-            + `<span class="ancestors">${(source.ancestors || []).join("")}</span>` + source.name;
-        this.title = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]} - ` : "") + source.longname;
-        this.doclets = Object.assign({}, children.reduce((members, c) => {
-            if (c.kind) (members[c.kind] = members[c.kind] || []).push(c);
-            return members;
-        }, {}));
-        
-        if (!DocletPage.#sources.has(this.path))
-            DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
-        
-        if (this.kind === "mainpage") {
-            this.title = this.name;
-            this.description = (this.doclets?.readme ?? []).map(d => d.readme ?? "").join("");
-        }
-        
-        for (let doclet of [this, ...children]) {
-            if (doclet.examples) {
-                doclet.examples = doclet.examples.map((example) => {
-                    let caption, code;
-                    
-                    if (example.match(/^\s*<caption>([\s\S]+?)<\/caption>(\s*[\n\r])([\s\S]+)$/i)) {
-                        caption = RegExp.$1;
-                        code = RegExp.$3;
-                    }
-                    
-                    return {
-                        caption: caption || "",
-                        code: code || example
-                    };
-                });
-            }
-            
-            if (doclet.see) {
-                doclet.see.forEach((hash, i) => {
-                    doclet.see[i] = (!/^(#.+)/.test(hash) ? hash : `<a href="${doclet.link.replace(/(#.+|$)/, hash)}">${hash}</a>`)
-                });
-            }
-        }
-    }
+    /**
+     * Map of JSDoc doclet sources to DocletPage instances to ensure uniqueness of each DocletPage
+     * @type {Map.<*, DocletPage>}
+     * @private
+     */
+    static #pages = new Map();
     
-    nav(boilerplate) {
-        let nav = JSDOM.fragment(`<div id="container">${boilerplate}</div>`),
-            active = nav.querySelector(`a[href="${this.link}"]`);
-        
-        if (!!active) {
-            active.classList.add("active");
-            
-            let parent = active.parentElement;
-            
-            while (!!parent) {
-                parent.classList.add("active");
-                parent = parent.parentElement;
-            }
-        }
-        
-        return nav.querySelector("#container").innerHTML;
-    }
+    /**
+     * Unique set of paths to source files for each DocletPage
+     * @type {Map.<string, Object>}
+     * @private
+     */
+    static #sources = new Map();
     
-    toc() {
-        return PublishUtils.buildTocNav(PublishUtils.getTocStructure(this));
-    }
-    
-    render() {
-        let html = view.render("container.tmpl", this);
-        return (this.#resolveLinks !== false ? helper.resolveLinks(html) : html);
-    }
-    
-    generate(fileName) {
-        fs.writeFileSync(path.join(outdir, fileName || this.link), this.render(), "utf8");
-    }
-    
+    /**
+     * List of DocletPage kinds which will potentially need pages of their own
+     * @type {String[]}
+     */
     static containers = ["module", "class", "namespace", "mixin", "external", "interface"];
+    
+    /**
+     * List of DocletPage kinds that necessarily belong to some other parent DocletPage
+     * @type {String[]}
+     */
     static members = ["member", "function", "typedef", "constant"];
+    
+    /**
+     * Map of doclet page kinds to titles to use for the doclet page
+     * @type {Object.<string, string>}
+     */
     static titles = {
         module: "Module",
         class: "Class",
@@ -430,25 +553,160 @@ class DocletPage {
         typedef: "Type Definitions"
     };
     
+    /**
+     * Master JSDoc Template used to render all other pages
+     * @type {Template}
+     * @private
+     */
+    static #template;
+    
+    /**
+     * Sets or retrieves the JSDoc master template used to render all documentation pages
+     * @param {Template} [template] - the JSDoc master template to use for rendering all documentation pages
+     */
+    static set template(template) {
+        return (DocletPage.#template = template);
+    }
+    
+    /**
+     * Instantiate and prepare a new DocletPage, or return an existing DocletPage for the given source
+     * @param {ClassyDoclet} source - the JSDoc doclet containing the details of the DocletPage to be created
+     * @param {*[]} [children=[]] - set of JSDoc doclets that are considered children of the current DocletPage
+     * @param {Boolean} [resolveLinks=true] - whether to resolve links to other doclets when generating the DocletPage
+     * @returns {DocletPage} the newly instantiated DocletPage, or the existing DocletPage if one exists for the given source
+     */
+    constructor(source, children = [], resolveLinks = true) {
+        // Only allow one doclet page per doclet source
+        if (DocletPage.#pages.has(source)) {
+            return DocletPage.#pages.get(source);
+        }
+        
+        // Save the new doclet page and copy all properties from source
+        DocletPage.#pages.set(source, this);
+        Object.assign(this, source);
+        
+        this.#resolveLinks = resolveLinks;
+        this.env = env;
+        this.doclet = source;
+        this.path = source?.meta?.source;
+        this.link = helper.createLink(source);
+        this.heading = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]}: ` : "")
+            + `<span class="ancestors">${(source.ancestors || []).join("")}</span>` + source.name;
+        this.doctitle = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]} - ` : "") + source.longname;
+        this.doclets = Object.assign({}, children.reduce((members, c) => {
+            if (c.kind) (members[c.kind] = members[c.kind] || []).push(c);
+            return members;
+        }, {}));
+        
+        // Add any missing source pages, so they can be linked or generated
+        if (!DocletPage.#sources.has(this.path)) {
+            DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
+        }
+        
+        // Fix the doctitle and description of the main page
+        if (this.kind === "mainpage") {
+            this.doctitle = this.name;
+            this.description = (this.doclets?.readme ?? []).map(d => d.readme ?? "").join("");
+        }
+        
+        // Fix the doctitle of the "Globals" page
+        if (this.kind === "globalobj") {
+            this.doctitle = "Globals";
+        }
+        
+        for (let doclet of [this, ...children]) {
+            // Re-format examples with captions where necessary
+            if (doclet.examples) doclet.examples = doclet.examples.map((example) => {
+                const [, caption = "",, code = example] = example.match(/^\s*<caption>([\s\S]+?)<\/caption>(\s*[\n\r])([\s\S]+)$/i) ?? [];
+                return {caption, code};
+            });
+            
+            // Re-format "see" links with correct anchors where necessary
+            if (doclet.see) doclet.see = doclet.see.map((hash) => {
+                return (!/^(#.+)/.test(hash) ? hash : `<a href="${doclet.link.replace(/(#.+|$)/, hash)}">${hash}</a>`);
+            });
+        }
+    }
+    
+    /**
+     * Add active class to the global navigation menu entry for the current page, and its parents
+     * @param {String} boilerplate - generated boilerplate HTML for the main navigation menu of a page
+     * @returns {String} HTML for the main navigation menu of a page, with current page and parents set to active
+     */
+    nav(boilerplate) {
+        const nav = JSDOM.fragment(`<div id="container">${boilerplate}</div>`);
+        const active = nav.querySelector(`a[href="${this.link}"]`);
+        
+        if (!!active) {
+            // Add the active class to the current page menu entry
+            active.classList.add("active");
+            
+            let parent = active.parentElement;
+            
+            // Add the active class to any parents of the current page menu entry
+            while (!!parent) {
+                parent.classList.add("active");
+                parent = parent.parentElement;
+            }
+        }
+        
+        // Return the navigation menu, but with the active classes added
+        return nav.querySelector("#container").innerHTML;
+    }
+    
+    /**
+     * Generate the HTML for the table of contents menu of the current page
+     * @returns {String} generated HTML for the table of contents menu of the current page
+     */
+    toc() {
+        return PublishUtils.buildTocNav(PublishUtils.getTocStructure(this));
+    }
+    
+    /**
+     * Render HTML for the current page using the previously specified template
+     * @returns {String} rendered HTML for the current page
+     */
+    render() {
+        const html = DocletPage.#template.render("container.tmpl", this);
+        return (this.#resolveLinks !== false ? helper.resolveLinks(html) : html);
+    }
+    
+    /**
+     * Render and save the HTML document for the current page
+     * @param {String} fileName - name of the file to save the rendered page to
+     */
+    generate(fileName) {
+        fs.writeFileSync(path.join(outdir, fileName || this.link), this.render(), "utf8");
+    }
+    
+    /**
+     * Restructure the given set of doclets by updating their membership and scope details
+     * @param {ClassyDoclet[]} doclets - set of doclets to be restructured
+     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     */
     static restructure(doclets, data) {
         for (let doclet of doclets) {
             // Go through all containers that get their own page
             if (doclet.meta && DocletPage.containers.includes(doclet.kind)) {
                 let {filename, path, lineno} = doclet.meta,
                     // Get all container symbols in the same file as the doclet
-                    next = data({meta: {filename: filename, path: path}, kind: DocletPage.containers}).get()
+                    next = data({meta: {filename, path}, kind: DocletPage.containers}).get()
                         // Work out the next container symbol in the same file (if any)
                         .filter(d => d?.meta?.lineno > lineno).sort((a, b) => a.meta.lineno - b.meta.lineno).shift(),
                     // Get all non-container symbols in the file
-                    children = data({meta: {filename: filename, path: path}},
+                    children = data({meta: {filename, path}},
                         ...DocletPage.containers.map(t => ({kind: {"!is": t}}))).get()
                         // And find ones that lie between this container and the next container
-                        .filter(c => (["MethodDefinition"].includes(c?.meta?.code?.type)
-                            && (c?.meta?.lineno > lineno) && (!next || c?.meta?.lineno < next?.meta?.lineno)));
+                        .filter(c => (c?.meta?.lineno > lineno) && (!next || c?.meta?.lineno < next?.meta?.lineno));
                 
                 // Fix the symbol's scope, membership, and long name!
                 for (let child of children) {
-                    child.setScope(child?.meta?.code?.node?.static ? "static" : "instance");
+                    // Only change the scope for method definitions...
+                    if (["MethodDefinition"].includes(child?.meta?.code?.type)) {
+                        child.setScope(child?.meta?.code?.node?.static ? "static" : "instance");
+                    }
+                    
+                    // ...but always update membership and long name
                     child.setMemberof(doclet.longname);
                     child.setLongname(`${doclet.longname}${helper.scopeToPunc[child.scope]}${child.name}`);
                 }
@@ -459,6 +717,12 @@ class DocletPage {
         }
     }
     
+    /**
+     * Declare links to JSDoc for the given set of doclets
+     * @param {Doclet[]} doclets - set of doclets to be declared to JSDoc's linking mechanism
+     * @param {String} [apiEntry] - class or namespace whose doclet should be treated as the index page
+     * @param {String} [indexUrl] - path to register as the index page
+     */
     static declare(doclets, apiEntry, indexUrl) {
         for (let doclet of doclets) {
             doclet.attribs = "";
@@ -476,11 +740,16 @@ class DocletPage {
         }
     }
     
+    /**
+     * Establish inheritance and child details for a given set of doclets
+     * @param {Doclet[]} doclets - set of doclets for which children and inheritance is to be established for
+     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     */
     static inherit(doclets, data) {
         for (let doclet of doclets) {
             // Establish inheritance for supplied doclets, where supported
             if (!!doclet?.meta) {
-                // Establish initial inheritance chain for the doclet, as well as whether or not it is a container-generating doclet
+                // Establish initial inheritance chain for the doclet, as well as whether it is a container-generating doclet
                 let inheritance = new Set([...(doclet.augments ?? []), ...(doclet.implements ?? []), ...(doclet.overrides ?? [])]),
                     isContainer = DocletPage.containers.includes(doclet.kind);
                 
@@ -488,7 +757,7 @@ class DocletPage {
                 if (!isContainer) {
                     // See if we can find the containing parent
                     let {filename, path} = doclet.meta,
-                        parent = data({meta: {filename: filename, path: path}}, [{name: doclet.memberof}, {longname: doclet.memberof}]).first();
+                        parent = data({meta: {filename, path}}, [{name: doclet.memberof}, {longname: doclet.memberof}]).first();
                     
                     if (!!parent?.augments) {
                         // If the parent inherits from somewhere, assume this symbol might inherit from there too
@@ -506,8 +775,8 @@ class DocletPage {
                         longname = inheritance.values().next().value,
                         inheritable = data(...[
                             // See if we can find a symbol to inherit from
-                            {longname: longname, kind: kind, ...(!!scope && !isContainer ? {scope: scope} : {})},
-                            (isContainer ? [] : [[{name: name}, {alias: name}]])
+                            {longname, kind, ...(!!scope && !isContainer ? {scope} : {})},
+                            (isContainer ? [] : [[{name}, {alias: name}]])
                         ].flat()).first();
                     
                     // If so, apply inheritance to inheritable tags
@@ -525,41 +794,45 @@ class DocletPage {
         }
     }
     
+    /**
+     * Create custom signature strings for a given set of doclets
+     * @param {Object[]} doclets - set of doclets for which signatures should be created
+     */
     static sign(doclets) {
         for (let doclet of doclets) {
-            let {kind, type, meta, signature = "", params = []} = doclet,
-                // Add types to signatures of constants and members
-                needsTypes = ["constant", "member"].includes(kind),
-                // Functions and classes automatically get signatures
-                needsSignature = ["function", "class"].includes(kind)
-                    // Typedefs that contain functions get a signature, too
-                    || (kind === "typedef" && (type?.names || []).some(t => t.toLowerCase() === "function"))
-                    // And namespaces that are functions get a signature (but finding them is a bit messy)
-                    || (kind === "namespace" && meta?.code?.type?.match(/[Ff]unction/));
+            const {kind, type, meta, signature = "", params = []} = doclet;
+            // Add types to signatures of constants and members
+            const needsTypes = ["constant", "member"].includes(kind);
+            // Functions and classes automatically get signatures
+            const needsSignature = ["function", "class"].includes(kind)
+                // Typedefs that contain functions get a signature, too
+                || (kind === "typedef" && (type?.names || []).some(t => t.toLowerCase() === "function"))
+                // And namespaces that are functions get a signature (but finding them is a bit messy)
+                || (kind === "namespace" && meta?.code?.type?.match(/[Ff]unction/));
             
             if (needsSignature) {
-                let source = doclet.yields || doclet.returns || [],
-                    // Prepare attribs and returns signatures
-                    attribs = PublishUtils.attribsString([...new Set(source.map(item => helper.getAttribs(item)).flat())]),
-                    returns = source.map(s => PublishUtils.typeStrings(s)).join("|"),
-                    // Prepare params signature
-                    args = params.filter(({name}) => name && !name.includes(".")).map((item) => {
-                            let {variable, optional, nullable} = item,
-                                name = (variable ? `&hellip;${item.name}` : item.name),
-                                attributes = [...(optional ? ["opt"] : []),
-                                    ...(nullable === true ? ["nullable"] : []),
-                                    ...(nullable === false ? ["non-null"] : [])].join(", ");
-                            
-                            // Return parameter name with trailing attributes if necessary
-                            return name + (attributes.length > 0 ? `<span class="signature-attributes">${attributes}</span>` : "");
-                        })
-                        .join(", ");
+                const source = doclet.yields || doclet.returns || [];
+                // Prepare attribs and returns signatures
+                const attribs = PublishUtils.attribsString([...new Set(source.map(item => helper.getAttribs(item)).flat())]);
+                const returns = source.map(s => PublishUtils.typeStrings(s)).join("|");
+                // Prepare params signature
+                const args = params.filter(({name}) => name && !name.includes("."))
+                    .map(({name: itemName, variable, optional, nullable}) => {
+                        const name = (variable ? `&hellip;${itemName}` : itemName);
+                        const attributes = [...(optional ? ["opt"] : []),
+                            ...(nullable === true ? ["nullable"] : []),
+                            ...(nullable === false ? ["non-null"] : [])].join(", ");
+                        
+                        // Return parameter name with trailing attributes if necessary
+                        return name + (attributes.length > 0 ? `<span class="signature-attributes">${attributes}</span>` : "");
+                    })
+                    .join(", ");
                 
                 // Add params to the signature, then add attribs and returns to the signature
                 doclet.signature = `<span class="signature">${signature}(${args})</span>`;
                 doclet.signature += `<span class="type-signature returns">${returns.length ? ` &rarr; ${attribs}{${returns}}` : ""}</span>`;
             } else if (needsTypes) {
-                let types = PublishUtils.typeStrings(doclet);
+                const types = PublishUtils.typeStrings(doclet);
                 
                 // Add types to the signature
                 doclet.signature = `${signature}<span class="type-signature">${types.length ? `: ${types}` : ""}</span>`;
@@ -567,22 +840,31 @@ class DocletPage {
             
             if (needsSignature || needsTypes) {
                 // Add the attributes tag if signatures or types were set above
-                let attribs = PublishUtils.attribsString(helper.getAttribs(doclet));
+                const attribs = PublishUtils.attribsString(helper.getAttribs(doclet));
                 if (attribs.length) doclet.attribs = `<span class="type-signature">${attribs} </span>`;
             }
         }
     }
     
+    /**
+     * Declare links to source files, and generate pages for each file where necessary
+     * @param {Object[]} doclets - set of doclets to assess for potential source files
+     * @param {String[]} files - list of all source file names
+     * @param {String} [encoding="utf8"] - encoding to use when reading source files
+     * @param {String|Boolean} [repositoryPath=false] - path to the hosted git repository, if specified
+     * @returns {DocletPage[]} collection of doclet pages to be generated for source files
+     */
     static sources(doclets, {_: files, encoding = "utf8"}, repositoryPath = false) {
-        let pages = [],
-            // Get the real prefix of the source files, as JSDoc strips it!
-            realPrefix = files
-                .reduce((prefix, file) => (!prefix ? file : prefix.split("").filter((c, i) => c === file[i]).join("")))
-                .replace(/\\/g, "/");
+        const pages = [];
+        // Get the real prefix of the source files, as JSDoc strips it!
+        const realPrefix = files
+            .reduce((prefix, file) => (!prefix ? file : prefix
+                .split("").filter((c, i) => c === file[i]).join("")))
+            .replace(/\\/g, "/");
         
         if (!!doclets && DocletPage.#sources.size > 0) {
             // Find common full path prefix to replace
-            let commonPrefix = JSDocPath.commonPrefix([...DocletPage.#sources.keys()]);
+            const commonPrefix = JSDocPath.commonPrefix([...DocletPage.#sources.keys()]);
             
             for (let file of [...DocletPage.#sources.values()]) {
                 // Add the shortened path and register the link
@@ -593,8 +875,8 @@ class DocletPage {
                 if (!repositoryPath) {
                     try {
                         // So attempt to do that
-                        let doclet = {kind: "source", name: file.shortened, longname: file.shortened},
-                            docs = [{kind: "source", code: helper.htmlsafe(fs.readFileSync(file.resolved, encoding))}];
+                        const doclet = {kind: "source", name: file.shortened, longname: file.shortened};
+                        const docs = [{kind: "source", code: helper.htmlsafe(fs.readFileSync(file.resolved, encoding))}];
                         
                         pages.push(new DocletPage(doclet, docs, false));
                     } catch (ex) {
@@ -621,29 +903,48 @@ class DocletPage {
  * @param {Tutorial} tutorials
  */
 exports.publish = (data, opts, tutorials) => {
-    let templatePath = path.normalize(opts.template),
-        conf = Object.assign(
-            env.conf.templates || {},
-            {default: env.conf.templates.default || {}},
-            {classy: env.conf.templates.classy || {}}
-        ),
-        packageData = Object.assign(
-            {name: "Home"},
-            data({kind: "package"}).first() || {},
-            (conf.classy.name ? {name: conf.classy.name} : {}),
-            (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {}),
-            {showName: conf.classy.showName ?? true},
-            {showVersion: conf.classy.showVersion ?? true},
-            {showGitLink: conf.classy.showGitLink ?? true}
-        ),
-        sourceFiles = {
-            output: conf?.default?.outputSourceFiles !== false, line: "line",
-            ...PublishUtils.getRepository(opts.package, packageData.repository)
-        },
-        // Claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
-        globalUrl = helper.getUniqueFilename("global"),
-        indexUrl = helper.getUniqueFilename("index"),
-        pages = [];
+    // Get template path and overall config
+    const templatePath = path.normalize(opts.template);
+    const conf = Object.assign(
+        env.conf.templates || {},
+        {default: env.conf.templates.default || {}},
+        {classy: env.conf.templates.classy || {}}
+    );
+    
+    /**
+     * Package data, parsed and collated from package.json and template config
+     * @typedef {Object.<string, any>} PackageData
+     * @property {String} name - package or main page name
+     * @property {String} [logo] - path to the logo, if a path was specified
+     * @property {Boolean} showName - whether to show the package name in the page header
+     * @property {Boolean} showVersion - whether to show the package version in the page header
+     * @property {Boolean} showGitLink - whether to show a link to the git repository in the page header
+     */
+    const packageData = Object.assign(
+        {name: "Home"},
+        data({kind: "package"}).first() || {},
+        (conf.classy.name ? {name: conf.classy.name} : {}),
+        (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {}),
+        {showName: conf.classy.showName ?? true},
+        {showVersion: conf.classy.showVersion ?? true},
+        {showGitLink: conf.classy.showGitLink ?? true}
+    );
+    
+    /**
+     * Configuration details about whether to generate pages for, or link to hosted versions of source files
+     * @typedef {HostedGitData} SourceFilesData
+     * @property {Boolean} output - whether the source files should be generated as standalone pages
+     * @property {String} line - prefix to use when linking to specific lines in source files
+     */
+    const sourceFiles = {
+        output: conf?.default?.outputSourceFiles !== false, line: "line",
+        ...PublishUtils.getRepository(opts.package, packageData.repository)
+    };
+    
+    // Claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
+    const globalUrl = helper.getUniqueFilename("global");
+    const indexUrl = helper.getUniqueFilename("index");
+    const pages = [];
     
     // Get things ready
     helper.prune(data);
@@ -653,7 +954,7 @@ exports.publish = (data, opts, tutorials) => {
     JSDocFS.mkPath(outdir);
     
     // Set up templating and handle static files
-    view = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, packageData, sourceFiles);
+    const template = DocletPage.template = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, packageData, sourceFiles);
     PublishUtils.handleStatics(templatePath, conf.default.staticFiles, {logo: conf.classy.logo, gitImage: sourceFiles.image});
     
     // Prepare all doclets for consumption
@@ -669,23 +970,23 @@ exports.publish = (data, opts, tutorials) => {
         ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, sourceFiles.path) : [])
     ]);
     
-    // Prepare view's common nav structure
-    PublishUtils.buildBoilerplateNav(view, data, tutorials.children, conf.classy.apiEntry);
+    // Prepare template's common nav structure
+    PublishUtils.buildBoilerplateNav(template, data, tutorials.children, conf.classy.apiEntry);
     
     // Extract the main page title from the readme
-    let readme = opts.readme && JSDOM.fragment(opts.readme),
-        heading = (!readme ? "Home" : readme.removeChild(readme.querySelector("h1")).textContent);
+    let readme = opts.readme && JSDOM.fragment(opts.readme);
+    const heading = (!readme ? "Home" : readme.removeChild(readme.querySelector("h1")).textContent);
     
     // Find the API entry doclet (if specified) and move it to the index
     if (!!conf.classy.apiEntry) {
         // Find the doclet and remove it from pages - it no longer gets its own page
-        let entry = data({kind: DocletPage.containers, longname: conf.classy.apiEntry}).first(),
-            index = pages.indexOf(new DocletPage(entry)),
-            page = (index >= 0 ? pages.splice(index, 1).pop() : false);
+        const entry = data({kind: DocletPage.containers, longname: conf.classy.apiEntry}).first();
+        const index = pages.indexOf(new DocletPage(entry));
+        const page = (index >= 0 ? pages.splice(index, 1).pop() : false);
         
         if (!!page) {
             // Render and get the inner contents of the page that would have existed
-            let content = JSDOM.fragment(JSDOM.fragment(page.render()).querySelector("main > article").innerHTML);
+            const content = JSDOM.fragment(JSDOM.fragment(page.render()).querySelector("main > article").innerHTML);
             
             // If there's no readme, now there is!
             if (!readme) readme = content;
@@ -698,8 +999,9 @@ exports.publish = (data, opts, tutorials) => {
                 if (!!sectionHeading) {
                     // The "API" heading exists, mark it as such
                     sectionHeading.setAttribute("id", "api");
+                    
                     // See if there's any sections following it
-                    let nextHeading = readme.querySelector("#api ~ h1, #api ~ h2, #api ~ h3, #api ~ h4, #api ~ h5, #api ~ h6");
+                    const nextHeading = readme.querySelector("#api ~ h1, #api ~ h2, #api ~ h3, #api ~ h4, #api ~ h5, #api ~ h6");
                     for (let node of [...readme.querySelectorAll("#api ~ *")]) {
                         // Remove nodes between API heading and next heading (if any)
                         if (node === nextHeading) break;
@@ -717,17 +1019,20 @@ exports.publish = (data, opts, tutorials) => {
         }
     }
     
+    // Check to see if we need to render the global page...
+    const globals = data({kind: DocletPage.members, memberof: {isUndefined: true}}).get();
+    if (globals.length) pages.unshift(new DocletPage({name: "Globals", kind: "globalobj", longname: globalUrl}, globals));
+    
     // Index page displays information from package.json and lists files
-    pages.unshift(...[
-        // ...(members.globals.length ? [new DocletPage({name: "Global", longname: globalUrl}, [{kind: "globalobj"}])] : []),
-        new DocletPage({name: heading, longname: indexUrl, kind: "mainpage"}, [
+    pages.unshift(
+        new DocletPage({name: heading, kind: "mainpage", longname: indexUrl}, [
             ...data({kind: "package"}).get(),
             ...[{kind: "readme", readme: [...readme?.children || []].map(n => n.outerHTML).join("\n"), longname: (opts.mainpagetitle) ? opts.mainpagetitle : "Main Page"}],
             ...data({kind: "file"}).get()
         ])
-    ]);
+    );
     
     // Generate all the pages, then generate the tutorials!
     for (let page of pages) page.generate(helper.longnameToUrl[page.longname] ?? page.longname);
-    PublishUtils.generateTutorials(tutorials);
+    PublishUtils.generateTutorials(template, tutorials);
 };

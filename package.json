@@ -19,5 +19,9 @@
   },
   "dependencies": {
     "jsdom": "^18.0.0"
+  },
+  "devDependencies": {
+    "jsdoc": "^3.6.11",
+    "taffy": "^2.6.2"
   }
 }

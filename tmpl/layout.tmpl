@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?js= (obj.kind === "mainpage" && obj.title !== "Home" ? "" : `${this.packageData?.name || "JSDoc"}: `) ?><?js= title ?></title>
+    <title><?js= (obj.kind === "mainpage" && obj.doctitle !== "Home" ? "" : `${this.packageData?.name || "JSDoc"}: `) ?><?js= obj.doctitle ?></title>
     <script src="static/classy.js"></script>
     <script src="static/highlight/highlight.min.js"></script>
     <script src="static/highlight/langs/javascript.min.js"></script>

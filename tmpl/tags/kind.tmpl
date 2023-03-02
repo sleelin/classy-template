@@ -1,0 +1,4 @@
+<?js= this.partial("partials/definition.tmpl", {
+    title: "Kind:", tag: "kind", items: (obj.kind === "namespace" ? ["singleton"] : []),
+    linktoFn: (item) => (item?.length ? `<span class="signature type-signature">${this.htmlsafe(item)}</span>` : "")
+}) ?>

@@ -99,15 +99,21 @@ a:hover {
     margin: 0;
 }
 
-.class-description {
+.class-title {
     font-size: 130%;
     line-height: 140%;
     margin-bottom: 1em;
     margin-top: 1em;
 }
 
-.class-description:empty {
+.class-title:empty {
     margin: 0;
+}
+
+.class-summary ul {
+    padding-inline-start: 20px;
+    margin-block-start: 4px;
+    margin-block-end: 0;
 }
 
 /* Ancestors Styling */
@@ -593,7 +599,7 @@ tr > th:last-child {
 }
 
 /*******************************
-    Details Section Styling
+  Details Section Styling
 ********************************/
 .details dl {
     margin: 0;
