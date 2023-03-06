@@ -307,38 +307,41 @@ class PublishUtils {
      */
     static getTocStructure(page) {
         const {kind, description, doclets: children, examples, params, properties} = page;
-        // Get titles in description from elements with "id" attribute
-        const titles = [...JSDOM.fragment(description).querySelectorAll(`[id]`)].map(e => ({
-                id: e.getAttribute("id"), name: e.textContent, children: [],
-                // Get the heading level from the number in the element tag
-                level: Number(!e.tagName.toUpperCase().startsWith("H") ? -1 : e.tagName.toUpperCase().replace("H", ""))
-            }))
-            // Get rid of any invalid titles
-            .filter(h => (h.level > 0 && !!h.id && !!h.name))
-            // Go through and give them structure
-            .reduce((titles, h) => {
-                // If top level title, add it to the list
-                if (h.level < 3) {
-                    if (!titles.includes(h)) titles.push(h);
-                    // Otherwise, try find a parent for it
-                } else {
-                    // Always start by assuming last title, if any, as parent
-                    let parent = titles[titles.length-1],
-                        level = (parent?.level > 0 ? parent?.level + 1 : h.level);
-            
-                    // Find the closest parent at specified depth
-                    while (parent?.children?.length && level < h.level) {
-                        parent = parent.children[parent.children.length - 1];
-                    }
-            
-                    // Add the child
-                    parent?.children?.push(h);
+        
+        // Get titles in description from heading elements with "id" attribute
+        const targets = [...JSDOM.fragment(description).querySelectorAll(`[id]`)]
+            // Get rid of any elements that aren't headings with an actual id and name
+            .filter((e) => (!!e.tagName.match(/^[hH]/g) && !!e.getAttribute("id") && !!e.textContent))
+            // Get the title id, name, and heading level from the number in the element tag
+            .map((e) => ([e.getAttribute("id"), e.textContent, Number(e.tagName.replace(/^[hH]/, ""))]))
+            .map(([id, name, level]) => ({id, name, level, children: []}));
+        
+        // Get the size of the biggest heading element
+        const minLevel = targets.reduce((min, {level}) => (level < min ? level : min), 6);
+        // Go through and give them structure
+        const titles = targets.reduce((titles, h) => {
+            // If top level title, add it to the list
+            if (h.level <= (minLevel === 1 ? 2 : minLevel)) {
+                if (!titles.includes(h)) titles.push(h);
+                // Otherwise, try find a parent for it
+            } else {
+                // Always start by assuming last title, if any, as parent
+                let parent = titles[titles.length-1],
+                    level = (parent?.level > 0 ? parent?.level + 1 : h.level);
+                
+                // Find the closest parent at specified depth
+                while (parent?.children?.length && level < h.level) {
+                    parent = parent.children[parent.children.length - 1];
                 }
-        
-                delete h.level;
-        
-                return titles;
-            }, []);
+                
+                // Add the child
+                parent?.children?.push(h);
+            }
+            
+            delete h.level;
+            
+            return titles;
+        }, []);
         
         // Start by assuming headings may just come from titles
         const headings = (["mainpage", "module"].includes(kind) ? titles : ( 
@@ -574,6 +577,11 @@ class DocletPage {
      * @param {*[]} [children=[]] - set of JSDoc doclets that are considered children of the current DocletPage
      * @param {Boolean} [resolveLinks=true] - whether to resolve links to other doclets when generating the DocletPage
      * @returns {DocletPage} the newly instantiated DocletPage, or the existing DocletPage if one exists for the given source
+     * @property {String} [path] - the full path to the DocletPage's associated source file
+     * @property {String} [link] - a link to this DocletPage
+     * @property {String} [heading] - the value to use in the page header for this DocletPage
+     * @property {String} [doctitle] - the value to use in the head title element for this DocletPage
+     * @property {Object.<string, ClassyDoclet[]>} [doclets] - any other doclets that are members of this page
      */
     constructor(source, children = [], resolveLinks = true) {
         // Only allow one doclet page per doclet source
