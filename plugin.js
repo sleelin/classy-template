@@ -2,8 +2,17 @@ const path = require("path");
 
 exports.defineTags = function (dictionary) {
     const tags = {
+        description: dictionary.lookUp("description"),
         classdesc: dictionary.lookUp("classdesc")
     };
+    
+    // Set the doclet title from the first "description" found
+    dictionary.defineTag("description", {
+        ...tags.description,
+        onTagged(doclet, tag) {
+            doclet.title = doclet.title ?? doclet.description ?? tag.value;
+        }
+    });
     
     // Treat "classdesc" as doclet title, unless explicitly tagged
     dictionary.defineTag("classdesc", {
@@ -20,30 +29,67 @@ exports.defineTags = function (dictionary) {
 
 exports.handlers = {
     parseComplete(e) {
-        // Go through source files to get classdesc from class constructors
+        // Go through source files to get classdesc from class or interface constructors
         for (let sourcefile of e.sourcefiles) {
             const filepath = path.dirname(sourcefile);
             const filename = path.basename(sourcefile);
             // Get doclets within this source file, then get doclets that describe a class declaration
             const doclets = e.doclets.filter(d => (d?.meta?.path === filepath && d?.meta?.filename === filename && !!d.comment));
             const classdecs = doclets.filter(d => (!d.undocumented && d.kind === "class"));
+            // Get doclets that describe an interface declaration, then sort by line number
+            const ifaces = doclets.filter(d => (!d.undocumented && d.kind === "interface"))
+                .sort((a, b) => a?.meta?.lineno - b?.meta?.lineno);
             
             // Go through class declarations and get the constructor description
-            for (let classdec of classdecs) {
-                // Get the first "undocumented" doclet between start and end of class declaration
+            for (let classdec of classdecs) if (!classdec.undocumented) {
+                // Get some positional details for finding the next doclet that could be a constructor
                 const [firstPos = Infinity, lastPos = - 1] = classdec?.meta?.range ?? [];
-                const {description} = doclets.find(({undocumented, kind, scope, meta: {range: [start, finish] = []} = {}}) => 
-                    (undocumented && kind === "class" && scope === "instance" && (start > firstPos && finish < lastPos))) ?? {};
+                const {title, meta: {lineno: firstLine}} = classdec;
+                const nextIndex = classdecs.indexOf(classdec) + 1;
+                const lastLine = nextIndex >= classdecs.length ? Infinity : classdecs[nextIndex]?.meta?.lineno;
+                // Get the first "undocumented" or wrongly documented doclet between start and end of class declaration
+                const constructor = doclets.find(({undocumented, kind, scope, meta: {lineno, range: [start, finish] = []} = {}}) => (
+                    (undocumented && kind === "class" && scope === "instance" && (start > firstPos && finish < lastPos)) 
+                    || (kind === "class" && scope === "static" && (lineno > firstLine && lineno <= lastLine)))) ?? {};
+                const {description, classdesc, params, properties} = constructor;
                 
-                if (!!description) {
-                    // If the descriptions don't match, use class constructor description as the classdesc
-                    if (classdec.description !== description) classdec.classdesc = description;
-                    // Otherwise, assume the description is meant to be the classdesc
-                    else {
-                        classdec.classdesc = classdec.description;
-                        classdec.description = "";
-                    }
+                // If the descriptions don't match, use class constructor description as the classdesc
+                if (!!description && classdec.description !== description) classdec.classdesc = description;
+                // Otherwise, assume the description is meant to be the classdesc
+                else {
+                    classdec.classdesc = classdec.description;
+                    classdec.description = "";
                 }
+                
+                // Mark the constructor as undocumented and proceed to copy missing details
+                Object.assign(constructor, {undocumented: true});
+                Object.assign(classdec, {
+                    description: classdec.description === `<p>${title}</p>` ? "" : classdec.description,
+                    ...(classdesc ? {classdesc} : {}),
+                    ...(params ? {params} : {}),
+                    ...(properties ? {properties} : {})
+                });
+            }
+            
+            // Go through interface declarations and get the constructor description
+            for (let iface of ifaces) {
+                // Get some positional details for finding the next doclet that could be a constructor
+                const {title, description, meta: {lineno: firstLine}} = iface;
+                const nextIndex = ifaces.indexOf(iface) + 1;
+                const lastLine = nextIndex >= ifaces.length ? Infinity : ifaces[nextIndex]?.meta?.lineno;
+                // Get the first "undocumented" or wrongly documented doclet between start and end of interface declaration
+                const constructor = doclets.find(({kind, scope, meta: {lineno} = {}}) =>
+                    (kind === "class" && scope === "static" && (lineno >= firstLine && lineno <= lastLine))) ?? {};
+                const {classdesc, params, properties} = constructor;
+                
+                // Mark the constructor as undocumented and proceed to copy missing details
+                Object.assign(constructor, {undocumented: true});
+                Object.assign(iface, {
+                    description: description === `<p>${title}</p>` ? "" : description,
+                    ...(classdesc ? {classdesc, virtual: true} : {}),
+                    ...(params ? {params} : {}),
+                    ...(properties ? {properties} : {})
+                });
             }
         }
     }

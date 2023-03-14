@@ -134,7 +134,8 @@ class PublishUtils {
      * @returns {String} either the existing unordered list summary, or a newly created list with the summary as its only item
      */
     static summarise({summary}) {
-        return (summary.startsWith("<ul>") ? JSDOM.fragment(summary).firstElementChild.outerHTML : `<ul><li>${summary}</li></ul>`);
+        const fragment = JSDOM.fragment(summary);
+        return (summary.startsWith("<ul>") ? fragment.firstElementChild.outerHTML : `<ul><li>${fragment.firstChild.innerHTML}</li></ul>`);
     }
     
     /**
@@ -193,7 +194,7 @@ class PublishUtils {
      * @param {Tutorial[]} tutorials - tutorials to include in the main navigation menu of a page
      * @param {String} [apiEntry] - class or namespace to treat as the entrypoint when generating structured navigation for a page
      */
-    static buildBoilerplateNav(template, data, tutorials, apiEntry) {
+    static buildBoilerplateNav(template, data, tutorials, apiEntry = "") {
         const scopes = ["Modules", "Namespaces", "Classes", "Interfaces", "Events", "Mixins", "Externals"];
         const {globals, ...members} = helper.getMembers(data);
         const nav = [];
@@ -201,7 +202,7 @@ class PublishUtils {
         
         nav.push(...[
             // Generate the structured navigation menu for the given API entrypoint
-            PublishUtils.buildStructuredNav(data, data({scope: "global", kind: DocletPage.containers}).get(), seen, 3, apiEntry),
+            PublishUtils.buildStructuredNav(data, data({scope: "global", kind: DocletPage.containers, name: apiEntry}).get(), seen, 3, apiEntry),
             // Generate navigation menu entries for any remaining unseen global members
             ...scopes.map(scope => PublishUtils.buildMemberNav(scope, members[scope.toLowerCase()], seen, helper.linkto)),
             // Generate navigation menu entries for any tutorials
@@ -245,7 +246,7 @@ class PublishUtils {
                 seen[item.longname] = true;
                 
                 listContent += `<h${depth}>API</h${depth}>`;
-                listContent += PublishUtils.buildStructuredNav(data, data({memberof: item.longname, kind: ["namespace", "class"]}).get(), seen, depth + 1);
+                listContent += PublishUtils.buildStructuredNav(data, data({memberof: item.longname, kind: DocletPage.classlike}).get(), seen, depth + 1);
                 
                 return listContent;
             }
@@ -255,7 +256,7 @@ class PublishUtils {
             for (let item of items) {
                 if (!(seen[item.longname])) {
                     const title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, ''));
-                    const children = PublishUtils.buildStructuredNav(data, data({memberof: item.longname, kind: ["namespace", "class"]}).get(), seen, depth + 1);
+                    const children = PublishUtils.buildStructuredNav(data, data({memberof: item.longname, kind: DocletPage.classlike}).get(), seen, depth + 1);
                     
                     listContent += `<li>${((depth < 5 || children.length) ? `<h${depth}>${title}</h${depth}>` : title) + children}</li>`;
                     seen[item.longname] = true;
@@ -344,7 +345,7 @@ class PublishUtils {
         }, []);
         
         // Start by assuming headings may just come from titles
-        const headings = (["mainpage", "module"].includes(kind) ? titles : ( 
+        const headings = (["mainpage", "module", "source"].includes(kind) ? titles : ( 
             // If headings weren't sourced from titles in the description, add a few basic entries
             ["globalobj"].includes(kind) ? [] : [
                 // Add "Description" heading to cover summary and any extended description 
@@ -352,7 +353,7 @@ class PublishUtils {
                 // Add "Usage" heading for details if required
                 {
                     id: "usage", name: "Usage", section: true,
-                    children: !["class", "namespace"].includes(kind) ? [] : [
+                    children: !DocletPage.classlike.includes(kind) ? [] : [
                         {id: "details", name: "Details"},
                         ...(params?.length ? [{id: "params", name: "Parameters"}] : []),
                         ...(properties?.length ? [{id: "properties", name: "Properties"}] : []),
@@ -539,6 +540,12 @@ class DocletPage {
     static members = ["member", "function", "typedef", "constant"];
     
     /**
+     * List of DocletPage kinds that are class-like
+     * @type {String[]}
+     */
+    static classlike = ["namespace", "class", "interface"];
+    
+    /**
      * Map of doclet page kinds to titles to use for the doclet page
      * @type {Object.<string, string>}
      */
@@ -574,7 +581,7 @@ class DocletPage {
     /**
      * Instantiate and prepare a new DocletPage, or return an existing DocletPage for the given source
      * @param {ClassyDoclet} source - the JSDoc doclet containing the details of the DocletPage to be created
-     * @param {*[]} [children=[]] - set of JSDoc doclets that are considered children of the current DocletPage
+     * @param {ClassyDoclet[]} [children=[]] - set of JSDoc doclets that are considered children of the current DocletPage
      * @param {Boolean} [resolveLinks=true] - whether to resolve links to other doclets when generating the DocletPage
      * @returns {DocletPage} the newly instantiated DocletPage, or the existing DocletPage if one exists for the given source
      * @property {String} [path] - the full path to the DocletPage's associated source file
@@ -702,8 +709,7 @@ class DocletPage {
                         // Work out the next container symbol in the same file (if any)
                         .filter(d => d?.meta?.lineno > lineno).sort((a, b) => a.meta.lineno - b.meta.lineno).shift(),
                     // Get all non-container symbols in the file
-                    children = data({meta: {filename, path}},
-                        ...DocletPage.containers.map(t => ({kind: {"!is": t}}))).get()
+                    children = data({meta: {filename, path}}, {kind: {"!is": DocletPage.containers}}).get()
                         // And find ones that lie between this container and the next container
                         .filter(c => (c?.meta?.lineno > lineno) && (!next || c?.meta?.lineno < next?.meta?.lineno));
                 
@@ -758,19 +764,30 @@ class DocletPage {
             // Establish inheritance for supplied doclets, where supported
             if (!!doclet?.meta) {
                 // Establish initial inheritance chain for the doclet, as well as whether it is a container-generating doclet
-                let inheritance = new Set([...(doclet.augments ?? []), ...(doclet.implements ?? []), ...(doclet.overrides ?? [])]),
-                    isContainer = DocletPage.containers.includes(doclet.kind);
+                const inheritance = new Set([...(doclet.augments ?? []), ...(doclet.implements ?? []), ...(doclet.overrides ?? [])]);
+                const isContainer = DocletPage.containers.includes(doclet.kind);
                 
                 // If it's not a container, it must have a parent
                 if (!isContainer) {
                     // See if we can find the containing parent
-                    let {filename, path} = doclet.meta,
-                        parent = data({meta: {filename, path}}, [{name: doclet.memberof}, {longname: doclet.memberof}]).first();
+                    const {filename, path} = doclet.meta;
+                    const parent = data({meta: {filename, path}}, [{name: doclet.memberof}, {longname: doclet.memberof}]).first();
+                    // Then get details about where the doclet inherits from its parent
+                    const {augments: augs = [], implements: imps = [], overrides: ovrs = []} = parent ?? {};
+                    const ancestors = [["augments", augs], ["implements", imps], ["overrides", ovrs]];
                     
-                    if (!!parent?.augments) {
-                        // If the parent inherits from somewhere, assume this symbol might inherit from there too
-                        for (let target of Array.isArray(parent.augments) ? parent.augments : [parent.augments]) {
-                            inheritance.add(`${target}${helper.scopeToPunc[doclet.scope || "instance"]}${doclet.name}`);
+                    // If the parent inherits from somewhere, assume this symbol might inherit from there too
+                    for (let [type, targets] of ancestors) {
+                        // Add inheritance of specified type to the doclet
+                        if (targets.length) doclet[type] = doclet[type] ?? [];
+                        
+                        // Go through each inheritable symbol to add to the doclet
+                        for (let target of targets) {
+                            const ancestorName = `${target}${helper.scopeToPunc[doclet.scope || "instance"]}${doclet.name}`;
+                            
+                            // Add ancestor to inheritance chain, and to the doclet
+                            inheritance.add(ancestorName);
+                            if (!doclet[type].includes(ancestorName)) doclet[type].push(ancestorName);
                         }
                     }
                 }
@@ -778,20 +795,22 @@ class DocletPage {
                 // Apply inheritance if necessary!
                 if (inheritance.size > 0) {
                     // Establish details of the symbol to inherit from
-                    let {name, kind, scope} = doclet,
-                        // Only inherit from the first name in the list
-                        longname = inheritance.values().next().value,
-                        inheritable = data(...[
-                            // See if we can find a symbol to inherit from
-                            {longname, kind, ...(!!scope && !isContainer ? {scope} : {})},
-                            (isContainer ? [] : [[{name}, {alias: name}]])
-                        ].flat()).first();
+                    const {name, kind, scope} = doclet;
+                    // Only inherit from the first name in the list
+                    const longname = inheritance.values().next().value;
+                    // See if we can find a symbol to inherit from
+                    const inheritable = data(...[
+                        {longname, kind, ...(!!scope && !isContainer ? {scope} : {})},
+                        (isContainer ? [] : [[{name}, {alias: name}]])
+                    ].flat()).first();
                     
                     // If so, apply inheritance to inheritable tags
                     if (!!inheritable) {
                         for (let key of ["description", "examples", "see", "params", "properties", "type", "returns"]) {
                             // Only if the tag isn't already defined on the doclet
-                            if (!Object.keys(doclet[key] ?? "").length) doclet[key] = inheritable[key];
+                            if (!Object.keys(doclet[key] ?? "").length && !!inheritable[key]) {
+                                doclet[key] = inheritable[key];
+                            }
                         }
                     }
                 }
@@ -812,7 +831,7 @@ class DocletPage {
             // Add types to signatures of constants and members
             const needsTypes = ["constant", "member"].includes(kind);
             // Functions and classes automatically get signatures
-            const needsSignature = ["function", "class"].includes(kind)
+            const needsSignature = ["function", "class", "interface"].includes(kind)
                 // Typedefs that contain functions get a signature, too
                 || (kind === "typedef" && (type?.names || []).some(t => t.toLowerCase() === "function"))
                 // And namespaces that are functions get a signature (but finding them is a bit messy)
@@ -892,7 +911,7 @@ class DocletPage {
                     }
                 }
             }
-        
+            
             for (let doclet of doclets) {
                 // Update the short path for all doclets
                 if (doclet.meta && DocletPage.#sources.has(doclet.meta.source)) {
@@ -975,7 +994,7 @@ exports.publish = (data, opts, tutorials) => {
         ...data({kind: DocletPage.containers}).get()
             .map(doclet => new DocletPage(doclet, data({memberof: doclet.longname}).get())),
         // ...as well as any corresponding source files, if enabled, and gitPath not specified
-        ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, sourceFiles.path) : [])
+        ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, conf?.default?.outputSourceFiles !== true && sourceFiles.path) : [])
     ]);
     
     // Prepare template's common nav structure
@@ -983,7 +1002,8 @@ exports.publish = (data, opts, tutorials) => {
     
     // Extract the main page title from the readme
     let readme = opts.readme && JSDOM.fragment(opts.readme);
-    const heading = (!readme ? "Home" : readme.removeChild(readme.querySelector("h1")).textContent);
+    const headingEl = readme.querySelector("h1");
+    const heading = (!readme || !headingEl ? "Home" : readme.removeChild(headingEl).textContent);
     
     // Find the API entry doclet (if specified) and move it to the index
     if (!!conf.classy.apiEntry) {
@@ -1001,8 +1021,8 @@ exports.publish = (data, opts, tutorials) => {
             // Otherwise, add or replace the "API" section of the readme
             else {
                 // See if we can find an "API" heading in the readme, and get the overview contents for insertion
-                let sectionHeading = [...readme.querySelectorAll("h1, h2, h3, h4, h5, h6")].find(h => h.innerHTML === "API"),
-                    sectionContent = content.querySelector(".container-overview");
+                const sectionHeading = [...readme.querySelectorAll("h1, h2, h3, h4, h5, h6")].find(h => h.innerHTML === "API");
+                const sectionContent = content.querySelector(".container-overview");
                 
                 if (!!sectionHeading) {
                     // The "API" heading exists, mark it as such
@@ -1016,12 +1036,40 @@ exports.publish = (data, opts, tutorials) => {
                         else readme.removeChild(node);
                     }
                     
-                    // Append the contents if nothing follows, or insert between sections
-                    if (!nextHeading) readme.appendChild(sectionContent);
-                    else readme.insertBefore(sectionContent, nextHeading);
+                    // Insert between sections if something follows...
+                    if (nextHeading) readme.insertBefore(sectionContent, nextHeading);
+                    // ...or append the contents if nothing follows
+                    else for (let node of [...sectionContent.querySelectorAll(".description > *")]) {
+                        readme.appendChild(node);
+                    }
                 } else {
-                    // Much simpler, there is no "API" section yet
-                    readme.appendChild(sectionContent);
+                    // There is no "API" section yet, so we create one
+                    const fragment = JSDOM.fragment(`<div id="container"><h2 id="api">API</h2></div>`);
+                    const container = fragment.querySelector("#container");
+                    // Look for child classes and namespaces for the entrypoint
+                    const classes = content.querySelector("#classes");
+                    const namespaces = content.querySelector("#namespaces");
+                    
+                    // If there's a summary and some classes or namespaces, make the section from these
+                    if (!!page.summary && (!!classes || !!namespaces)) {
+                        // Make a new list, and add all existing class and namespace entries to it
+                        const list = JSDOM.fragment(`<ul class="subsection-list"></ul>`).firstChild;
+                        for (let node of [...(classes?.querySelectorAll(".subsection-list > li") ?? []),
+                            ...(namespaces?.querySelectorAll(".subsection-list > li") ?? [])]) {
+                            list.appendChild(node);
+                        }
+                        
+                        // Add the summary and the new list to the container
+                        container.appendChild(JSDOM.fragment(page.summary).firstChild);
+                        container.appendChild(list);
+                    }
+                    // If there isn't a summary or there's no classlike children, just transpose the description
+                    else for (let node of [...sectionContent.querySelectorAll(".description > *")]) {
+                        container.appendChild(node);
+                    }
+                    
+                    // Add each new element to the actual page
+                    for (let node of [...fragment.querySelectorAll("#container > *")]) readme.appendChild(node);
                 }
             }
         }
