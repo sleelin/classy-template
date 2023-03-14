@@ -8,7 +8,7 @@
                 <div class="class-summary description">
                     <blockquote>
                         <strong>Summary:</strong>
-                        <?js= obj.summary ?>
+                        <?js= this.summarise(obj) ?>
                     </blockquote>
                 </div>
             <?js } ?>
@@ -22,7 +22,7 @@
             <div class="class-signature">
                 <pre class="signature name no-highlight">
                     <code>
-                        <?js= obj.attribs + (obj.kind === "class" ? "new " : "")
+                        <?js= obj.attribs + "new "
                         + `${obj.memberof ? `<span class="ancestors">${obj.memberof}.</span>` : ""}${obj.name}`
                         + (obj.signature || "") ?>
                     </code>
