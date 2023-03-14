@@ -1,0 +1,56 @@
+<?js var isClass = (obj.kind === "class" || obj.signature); ?>
+<article class="content-container class-definition">
+    <h2 class="class-title<?js= !isClass ? " hidden" : "" ?>"><?js= isClass ? obj.title : obj.doctitle ?></h2>
+    <section id="description" class="container-overview">
+        <header>
+            <h3 class="hidden">Description</h3>
+            <?js if (obj.summary) { ?>
+                <div class="class-summary description">
+                    <blockquote>
+                        <strong>Summary:</strong>
+                        <?js= this.summarise(obj) ?>
+                    </blockquote>
+                </div>
+            <?js } ?>
+        </header>
+        <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
+    </section>
+    <section id="usage" class="class-usage">
+        <h3 class="subsection-title">Usage</h3>
+        <?js if (isClass) { ?>
+            <div class="description"><?js= obj.classdesc ?></div>
+            <div class="class-signature">
+                <pre class="signature name no-highlight">
+                    <code>
+                        <?js= obj.attribs + "new "
+                        + `${obj.memberof ? `<span class="ancestors">${obj.memberof}.</span>` : ""}${obj.name}`
+                        + (obj.signature || "") ?>
+                    </code>
+                </pre>
+            </div>
+        <?js } ?>
+        <?js= this.partial("partials/details.tmpl", obj) ?>
+        <?js= this.partial("tags/modifies.tmpl", obj) ?>
+        <?js= this.partial("tags/examples.tmpl", obj) ?>
+    </section>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Classes", id: "classes", items: obj?.doclets?.class}) ?>
+    <?js= this.partial("partials/section.tmpl", {title: "Interfaces", id: "interfaces", items: obj?.doclets?.interface}) ?>
+    <?js= this.partial("partials/section.tmpl", {title: "Mixins", id: "mixins", items: obj?.doclets?.mixin}) ?>
+    <?js= this.partial("partials/section.tmpl", {title: "Namespaces", id: "namespaces", items: obj?.doclets?.namespace}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Members", id: "members", items: obj?.doclets?.member, 
+        forEach: (item) => this.partial("partials/members.tmpl", item)}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Methods", id: "methods", items: obj?.doclets?.function,
+        forEach: (item) => this.partial("partials/method.tmpl", item)}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Type Definitions", id: "typedefs", items: obj?.doclets?.typedef, 
+        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Events", id: "events", items: obj?.doclets?.event, 
+        forEach: (item) => this.partial("partials/method.tmpl", item)}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Constants", id: "constants", items: obj?.doclets?.constant, 
+        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)}) ?>
+</article>

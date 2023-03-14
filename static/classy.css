@@ -25,6 +25,7 @@
 :root {
     --gutter-width-left: 250px;
     --gutter-width-right: 220px;
+    --container-margin-offset: 30px;
 }
 
 html {
@@ -99,15 +100,21 @@ a:hover {
     margin: 0;
 }
 
-.class-description {
+.class-title {
     font-size: 130%;
     line-height: 140%;
     margin-bottom: 1em;
     margin-top: 1em;
 }
 
-.class-description:empty {
+.class-title:empty {
     margin: 0;
+}
+
+.class-summary ul {
+    padding-inline-start: 20px;
+    margin-block-start: 4px;
+    margin-block-end: 0;
 }
 
 /* Ancestors Styling */
@@ -593,7 +600,7 @@ tr > th:last-child {
 }
 
 /*******************************
-    Details Section Styling
+  Details Section Styling
 ********************************/
 .details dl {
     margin: 0;
@@ -669,7 +676,7 @@ code {
 }
 
 code, .hljs {
-    background-color: #afb8c133;
+    background-color: #eff1f3;
 }
 
 .hljs-attr, .hljs-variable.constant_ {
@@ -684,31 +691,65 @@ code, .hljs {
     display: inline-block;
 }
 
-.prettyprint.linenums {
-    padding-left: 70px;
+/*******************************
+  Source Code Styling
+********************************/
+.source-code .page-title {
+    display: none;
+}
+
+.source-code code {
+    position: relative;
+    padding-left: 0 !important;
+}
+
+/* For line numbers block */
+.source-code td {
+    border: 0;
+}
+
+.source-code .hljs-ln-numbers {
+    -webkit-touch-callout: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    text-align: center;
+    color: #ccc;
+    vertical-align: top;
+    position: sticky;
+    left: 0;
+    padding-left: 10px;
 }
 
-.prettyprint.linenums ol {
-    padding-left: 0;
+.source-code .hljs-ln-numbers .hljs-ln-n {
+    border-right: 2px #ddd solid;
+    background-color: #eff1f3;
+    padding-right: 5px;
+    margin-left: -15px;
+    padding-left: 15px;
 }
 
-.prettyprint.linenums li {
-    border-left: 3px #ddd solid;
+.source-code .hljs-ln-code {
+    padding-left: 10px;
 }
 
-.prettyprint.linenums li.selected, .prettyprint.linenums li.selected * {
-    background-color: lightyellow;
+.source-code tr.selected td {
+    animation-name: blink;
+    animation-duration: 1s;
+    animation-iteration-count: 1;
 }
 
-.prettyprint.linenums li * {
-    -webkit-user-select: text;
-    -moz-user-select: text;
-    -ms-user-select: text;
-    user-select: text;
+@keyframes blink {
+    0% {
+        background-color: transparent;
+    }
+    40% {
+        background-color: lightyellow;
+    }
+    100% {
+        background-color: transparent;
+    }
 }
 
 /*******************************
@@ -856,6 +897,12 @@ code, .hljs {
     td.type .param-join {
         display: none;
     }
+    
+    /* Make source code page take up full width */
+    .source-code.content-container, .source-code ~ footer {
+        width: calc(100vw - var(--gutter-width-left) - var(--container-margin-offset));
+        justify-self: start;
+    }
 }
 
 @media (max-width: 1080px) {
@@ -973,7 +1020,7 @@ code, .hljs {
         display: none;
     }
     
-    .section-header .page-title {
+    .section-header .page-title, .source-code .page-title {
         display: block;
     }
     
@@ -1015,7 +1062,7 @@ code, .hljs {
     }
 }
 
-@media (max-width: 648px) {
+@media (max-width: 720px) {
     /* Remove right guttering */
     :root {
         --gutter-width-right: 0px;
@@ -1053,9 +1100,19 @@ code, .hljs {
     .section-header .page-title {
         display: none;
     }
+    
+    /* Remove the margin from the top of source code pages */
+    .content-container.source-code {
+        margin-top: 0;
+    }
 }
 
 @media (max-width: 580px) {
+    /* Remove container margin offset */
+    :root {
+        --container-margin-offset: 0px;
+    }
+    
     /* Remove outer padding from content */
     main > .content-container {
         margin: 15px 0 0;

@@ -1,23 +1,35 @@
-<?js var isGlobalPage = (obj.kind === "globalobj"); ?>
 <article class="content-container">
     <header class="section-header">
         <h2 class="page-title"><?js= obj.heading ?></h2>
     </header>
-    <section>
-        <div class="container-overview">
-            <?js if (obj.kind === "module" && obj.modules) { ?>
+    
+    <?js if (obj.kind !== "globalobj") { ?>
+        <section>
+            <div class="container-overview">
                 <?js if (obj.description) { ?><div class="overview-description"><?js= obj.description ?></div><?js } ?>
-                <?js obj.modules.forEach((module) => { ?><?js= this.partial("partials/method.tmpl", module) ?><?js }) ?>
-            <?js } else if (!["class", "namespace"].includes(obj.kind)) { ?>
-                <?js if (obj.description) { ?><div class="overview-description"><?js= obj.description ?></div><?js } ?>
-                <?js= this.partial("partials/details.tmpl", obj) ?>
-            <?js } ?>
-        </div>
-    </section>
-
-    <?js= this.partial("partials/section.tmpl", {title: "Requires", classes: "child-requires", items: obj?.requires}) ?>
-    <?js= this.partial("partials/section.tmpl", {title: "Classes", classes: "child-classes", items: !isGlobalPage && obj?.doclets?.class}) ?>
-    <?js= this.partial("partials/section.tmpl", {title: "Interfaces", classes: "child-interfaces", items: !isGlobalPage && obj?.doclets?.interface}) ?>
-    <?js= this.partial("partials/section.tmpl", {title: "Mixins", classes: "child-mixins", items: !isGlobalPage && obj?.doclets?.mixin}) ?>
-    <?js= this.partial("partials/section.tmpl", {title: "Namespaces", classes: "child-namespaces", items: !isGlobalPage && obj?.doclets?.namespace}) ?>
+                <?js if (obj.kind === "module" && obj.modules) { ?>
+                    <?js obj.modules.forEach((module) => { ?><?js= this.partial("partials/method.tmpl", module) ?><?js }) ?>
+                <?js } else { ?>
+                    <?js= this.partial("partials/details.tmpl", obj) ?>
+                <?js } ?>
+            </div>
+            <?js= this.partial("partials/section.tmpl", {title: "Requires", classes: "child-requires", items: obj?.requires}) ?>
+            <?js= this.partial("partials/section.tmpl", {title: "Classes", classes: "child-classes", items: obj?.doclets?.class}) ?>
+            <?js= this.partial("partials/section.tmpl", {title: "Interfaces", classes: "child-interfaces", items: obj?.doclets?.interface}) ?>
+            <?js= this.partial("partials/section.tmpl", {title: "Mixins", classes: "child-mixins", items: obj?.doclets?.mixin}) ?>
+            <?js= this.partial("partials/section.tmpl", {title: "Namespaces", classes: "child-namespaces", items: obj?.doclets?.namespace}) ?>
+        </section>
+    <?js } ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Members", id: "members", items: obj?.doclets?.member, 
+        forEach: (item) => this.partial("partials/members.tmpl", item)}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Methods", id: "methods", items: obj?.doclets?.function, 
+        forEach: (item) => this.partial("partials/method.tmpl", item)}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Type Definitions", id: "typedefs", items: obj?.doclets?.typedef, 
+        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)}) ?>
+    
+    <?js= this.partial("partials/section.tmpl", {title: "Constants", id: "constants", items: obj?.doclets?.constant, 
+        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)}) ?>
 </article>

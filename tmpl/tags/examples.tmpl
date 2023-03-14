@@ -1,6 +1,6 @@
 <?js if (obj?.examples?.length) { ?>
     <section <?js= ["class", "namespace"].includes(obj.kind) ? `id="examples"` : "" ?> class="tag-examples">
-        <h5 class="subsection-title">Example<?js= obj.examples.length > 1 ? "s" : "" ?></h5>
+        <h5 class="subsection-title">Examples:</h5>
         <?js obj.examples.forEach((example) => { ?>
             <article class="example">
                 <?js if (example.caption) { ?><div class="example-caption"><?js= example.caption ?></div><?js } ?>

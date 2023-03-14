@@ -6,7 +6,6 @@
     </header>
     
     <?js= this.partial("partials/details.tmpl", obj) ?>
-    <?js= this.partial("tags/params.tmpl", obj) ?>
     <?js= this.partial("tags/modifies.tmpl", obj) ?>
     <?js= this.partial("tags/returns.tmpl", {title: "Returns:", items: obj.returns}) ?>
     <?js= this.partial("tags/returns.tmpl", {title: "Yields:", items: obj.yields}) ?>

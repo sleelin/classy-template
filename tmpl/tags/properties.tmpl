@@ -1,4 +1,8 @@
-<?js= this.partial("partials/definition.tmpl", {
-    title: "Properties:", classes: "props", items: obj?.properties?.length && !obj.hideconstructor && [obj.properties],
-    linktoFn: () => this.partial("partials/typedef.tmpl", {memberof: obj.memberof, items: obj.properties, isEnum: obj.isEnum})
-}) ?>
+<?js if (obj?.properties?.length && !obj.hideconstructor) { ?>
+    <section <?js= ["class", "namespace"].includes(obj.kind) ? `id="properties"` : "" ?> class="props">
+        <h5 class="subsection-title">Properties:</h5>
+        <div class="subsection-content">
+            <?js= this.partial("partials/typedef.tmpl", {items: obj.properties || [], memberof: obj.memberof, isEnum: obj.isEnum}) ?>
+        </div>
+    </section>
+<?js } ?>

@@ -1,12 +1,4 @@
-<?js if (obj.kind === "mainpage") { ?>
-    <?js= this.partial("masters/mainpage.tmpl", obj) ?>
-<?js } else if (obj.kind === "source") { ?>
-    <?js= this.partial("masters/source.tmpl", obj) ?>
-<?js } else if (["class", "namespace"].includes(obj.kind)) { ?>
-    <?js= this.partial("masters/class.tmpl", obj) ?>
-<?js } else { ?>
-    <?js= this.partial("masters/module.tmpl", obj) ?>
-<?js } ?>
+<?js= this.partial(this.getMasterPath(obj), obj) ?>
 <aside class="content-aside">
     <?js var toc = obj.toc(); ?>
     <?js if (toc.length) { ?>
