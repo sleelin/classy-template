@@ -1,8 +1,19 @@
-<article class="content-container">
-    <header class="section-header">
-        <h2 class="page-title"><?js= obj.heading ?></h2>
-    </header>
-    <section id="source">
-        <pre class="prettyprint source linenums"><code><?js= obj.code ?></code></pre>
-    </section>
+<article class="content-container source-code">
+    <h2 class="page-title subsection-title"><?js= obj.heading ?></h2>
+    <pre class="prettyprint source linenums"><code><?js= obj.doclets.source[0].code ?></code></pre>
 </article>
+<script src="static/highlight/langs/line-numbers.min.js"></script>
+<script>hljs.initLineNumbersOnLoad();</script>
+<script>
+    function identifyAndScrollToLines() {
+        document.querySelectorAll(".hljs-ln-numbers").forEach(function (el) {
+            if (window.location.hash === ("#L" + el.dataset.lineNumber)) {
+                el.parentElement.classList.add("selected");
+                el.parentElement.scrollIntoView({behavior: "smooth", inline: "start"});
+            }
+        });
+    }
+    
+    window.addEventListener("load", identifyAndScrollToLines);
+    window.setTimeout(identifyAndScrollToLines, 10);
+</script>
