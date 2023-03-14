@@ -1,0 +1,29 @@
+{
+  "plugins": [
+    "plugins/markdown",
+    "./plugin"
+  ],
+  "source": {
+    "include": ["example/src"]
+  },
+  "opts": {
+    "recurse": true,
+    "template": "./",
+    "destination": "./example/docs",
+    "readme": "./example/README.md",
+    "package": "./package.json"
+  },
+  "markdown": {
+    "idInHeadings": true
+  },
+  "templates": {
+    "default": {
+      "outputSourceFiles": true
+    },
+    "classy": {
+      "name": "Example Docs",
+      "showName": true,
+      "apiEntry": "Geometry"
+    }
+  }
+}

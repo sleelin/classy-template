@@ -17,6 +17,9 @@
   "bugs": {
     "url": "https://github.com/sleelin/classy-template/issues"
   },
+  "scripts": {
+    "example": "./node_modules/.bin/jsdoc -c ./jsdoc.json"
+  },
   "dependencies": {
     "jsdom": "^18.0.0"
   },
