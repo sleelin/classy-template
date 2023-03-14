@@ -29,7 +29,7 @@ class PublishUtils {
         const layout = !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile));
         const find = (spec) => data(spec).get();
         const {linkto, htmlsafe, resolveAuthorLinks} = helper;
-        const {typeString, linkTutorial: tutoriallink, summarise} = PublishUtils;
+        const {typeString, linkTutorial: tutoriallink, summarise, getMasterPath} = PublishUtils;
     
         /**
          * @typedef {Template} BootstrappedTemplate
@@ -43,6 +43,7 @@ class PublishUtils {
          * @property {typeof PublishUtils#typeString} typeString - method for generating type strings, from PublishUtils class
          * @property {typeof PublishUtils#linkTutorial} tutoriallink - method for linking to tutorial pages, from PublishUtils class
          * @property {typeof PublishUtils#summarise} summarise - method for rendering doclet summaries, from PublishUtils class
+         * @property {typeof PublishUtils#getMasterPath} getMasterPath - method for resolving the path to the master partial template to use when rendering a doclet page
          * @property {String} [boilerplateNav] - generated HTML for the main navigation menu of a page
          */
         return Object.assign(new JSDocTemplate(path.join(templatePath, "tmpl")), {
@@ -51,8 +52,27 @@ class PublishUtils {
             // Expose useful helper functions to template
             linkto, htmlsafe, resolveAuthorLinks,
             // Expose useful PublishUtils functions and values to template
-            typeString, tutoriallink, summarise
+            typeString, tutoriallink, summarise, getMasterPath
         });
+    }
+    
+    /**
+     * Get the path to a partial template in the masters folder to use for the given kind of doclet page
+     * @param {DocletPage} page - the doclet page being rendered, with a 'kind' property to map to a master partial template
+     * @returns {String} the path to the partial template in the masters folder to use for the given kind of page
+     */
+    static getMasterPath({kind}) {
+        // Default to using module template
+        let name = "module";
+        
+        // Handle main and source pages
+        if (["mainpage", "source"].includes(kind)) 
+            name = kind;
+        // Handle "class-like" pages
+        if (DocletPage.classlike.includes(kind))
+            name = "classlike";
+        
+        return `masters/${name}.tmpl`;
     }
     
     /**
