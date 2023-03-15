@@ -799,16 +799,18 @@ class DocletPage {
                     
                     // If the parent inherits from somewhere, assume this symbol might inherit from there too
                     for (let [type, targets] of ancestors) {
-                        // Add inheritance of specified type to the doclet
-                        if (targets.length) doclet[type] = doclet[type] ?? [];
-                        
                         // Go through each inheritable symbol to add to the doclet
                         for (let target of targets) {
                             const ancestorName = `${target}${helper.scopeToPunc[doclet.scope || "instance"]}${doclet.name}`;
                             
                             // Add ancestor to inheritance chain, and to the doclet
-                            inheritance.add(ancestorName);
-                            if (!doclet[type].includes(ancestorName)) doclet[type].push(ancestorName);
+                            if (!inheritance.has(ancestorName)) {
+                                inheritance.add(ancestorName);
+                                
+                                // Add inheritance of specified type to the doclet
+                                doclet[type] = doclet[type] ?? [];
+                                if (!doclet[type].includes(ancestorName)) doclet[type].push(ancestorName);
+                            }
                         }
                     }
                 }
