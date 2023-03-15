@@ -926,12 +926,7 @@ code, .hljs {
         --gutter-width-left: 0px;
     }
     
-    /* Display body content inline */
-    body {
-        grid-template-columns: 100%;
-        grid-template-rows: auto;
-    }
-    
+    /* Resize content appropriately */
     main > .content-container {
         margin-left: 15px;
         justify-self: unset;
@@ -1020,7 +1015,7 @@ code, .hljs {
         display: none;
     }
     
-    .section-header .page-title, .source-code .page-title {
+    .section-header .page-title {
         display: block;
     }
     
