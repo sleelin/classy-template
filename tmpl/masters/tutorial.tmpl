@@ -1,13 +1,19 @@
-<section>
-    <header>
-        <?js if (obj.children.length > 0) { ?>
-            <ul>
-                <?js obj.children.forEach((t) => { ?><li><?js= this.tutoriallink(t.name) ?></li><?js }); ?>
-            </ul>
-        <?js } ?>
-        <h2><?js= obj.header ?></h2>
+<article class="content-container tutorial">
+    <header class="section-header">
+        <h2 class="page-title subsection-title"><?js= obj.heading ?></h2>
     </header>
-    <article>
-        <?js= content ?>
-    </article>
-</section>
+    <div class="description"><?js= obj.description ?></div>
+    <section id="related" class="class-summary description">
+        <blockquote>
+            <strong>Related Tutorials:</strong>
+            <ul>
+                <?js if (!obj?.parent?.name && !obj?.children?.length) { ?>
+                    <li><em>None</em></li>
+                <?js } else {?>
+                    <?js= (!!obj?.parent?.name ? `<li>${this.linkTutorial(obj?.parent?.name)}</li>` : "") ?>
+                    <?js obj?.children?.forEach((t) => { ?><li><?js= this.linkTutorial(t.name) ?></li><?js }); ?>
+                <?js } ?>
+            </ul>
+        </blockquote>
+    </section>
+</article>

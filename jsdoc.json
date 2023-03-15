@@ -11,7 +11,8 @@
     "template": "./",
     "destination": "./example/docs",
     "readme": "./example/README.md",
-    "package": "./package.json"
+    "package": "./package.json",
+    "tutorials": "./example/tutorials"
   },
   "markdown": {
     "idInHeadings": true

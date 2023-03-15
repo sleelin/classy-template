@@ -29,7 +29,7 @@ class PublishUtils {
         const layout = !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile));
         const find = (spec) => data(spec).get();
         const {linkto, htmlsafe, resolveAuthorLinks} = helper;
-        const {typeString, linkTutorial: tutoriallink, summarise, getMasterPath} = PublishUtils;
+        const {typeString, linkTutorial, summarise, getMasterPath} = PublishUtils;
     
         /**
          * @typedef {Template} BootstrappedTemplate
@@ -41,7 +41,7 @@ class PublishUtils {
          * @property {typeof helper.htmlsafe} htmlsafe - method for rendering raw HTML safely, from JSDoc template helper library
          * @property {typeof helper.resolveAuthorLinks} resolveAuthorLinks - method for linking to a doclet's author, from JSDoc template helper library
          * @property {typeof PublishUtils#typeString} typeString - method for generating type strings, from PublishUtils class
-         * @property {typeof PublishUtils#linkTutorial} tutoriallink - method for linking to tutorial pages, from PublishUtils class
+         * @property {typeof PublishUtils#linkTutorial} linkTutorial - method for linking to tutorial pages, from PublishUtils class
          * @property {typeof PublishUtils#summarise} summarise - method for rendering doclet summaries, from PublishUtils class
          * @property {typeof PublishUtils#getMasterPath} getMasterPath - method for resolving the path to the master partial template to use when rendering a doclet page
          * @property {String} [boilerplateNav] - generated HTML for the main navigation menu of a page
@@ -52,7 +52,7 @@ class PublishUtils {
             // Expose useful helper functions to template
             linkto, htmlsafe, resolveAuthorLinks,
             // Expose useful PublishUtils functions and values to template
-            typeString, tutoriallink, summarise, getMasterPath
+            typeString, linkTutorial, summarise, getMasterPath
         });
     }
     
@@ -66,7 +66,7 @@ class PublishUtils {
         let name = "module";
         
         // Handle main and source pages
-        if (["mainpage", "source"].includes(kind)) 
+        if (["mainpage", "source", "tutorial"].includes(kind)) 
             name = kind;
         // Handle "class-like" pages
         if (DocletPage.classlike.includes(kind))
@@ -160,22 +160,20 @@ class PublishUtils {
     
     /**
      * Generate all specified tutorials using the given template
-     * @param {Template} template - JSDoc Template to use when rendering tutorials
-     * @param {Tutorial[]} children - tutorials whose content are contained within the given parent tutorial
+     * @param {Tutorial[]} tutorials - tutorials whose content should be rendered
      */
-    static generateTutorials(template, {children}) {
-        for (let child of children) {
+    static generateTutorials({children = []}) {
+        for (let tutorial of children) {
             // Construct the data from the tutorial to provide to the template
-            const {title: header, children} = child;
-            const title = `Tutorial: ${header}`;
-            const templateData = {title, header, children, content: child.parse()};
-            // Render the tutorial page and determine where it should be output
-            const content = helper.resolveLinks(template.render("masters/tutorial.tmpl", templateData));
-            const filepath = path.join(outdir, helper.tutorialToUrl(child.name));
+            const {title, parent, children, name} = tutorial;
+            const page = new DocletPage({
+                kind: "tutorial", name, title, children, longname: title,
+                description: tutorial.parse(), parent: parent?.name && parent
+            });
             
             // Write the output to the filesystem and proceed to handle any descendant tutorials
-            fs.writeFileSync(filepath, content, "utf8");
-            PublishUtils.generateTutorials(template, child);
+            page.generate(helper.tutorialToUrl(name));
+            PublishUtils.generateTutorials(tutorial);
         }
     }
     
@@ -344,8 +342,9 @@ class PublishUtils {
             // If top level title, add it to the list
             if (h.level <= (minLevel === 1 ? 2 : minLevel)) {
                 if (!titles.includes(h)) titles.push(h);
-                // Otherwise, try find a parent for it
-            } else {
+            } 
+            // Otherwise, try find a parent for it
+            else {
                 // Always start by assuming last title, if any, as parent
                 let parent = titles[titles.length-1],
                     level = (parent?.level > 0 ? parent?.level + 1 : h.level);
@@ -364,16 +363,16 @@ class PublishUtils {
             return titles;
         }, []);
         
-        // Start by assuming headings may just come from titles
-        const headings = (["mainpage", "module", "source"].includes(kind) ? titles : ( 
+        // Start by assuming headings may just come from titles or be empty
+        const headings = (!DocletPage.classlike.includes(kind) ? (["globalobj"].includes(kind) ? [] : titles) : ( 
             // If headings weren't sourced from titles in the description, add a few basic entries
-            ["globalobj"].includes(kind) ? [] : [
+            [
                 // Add "Description" heading to cover summary and any extended description 
                 {id: "description", name: "Description", section: true, siblings: titles},
                 // Add "Usage" heading for details if required
                 {
                     id: "usage", name: "Usage", section: true,
-                    children: !DocletPage.classlike.includes(kind) ? [] : [
+                    children: [
                         {id: "details", name: "Details"},
                         ...(params?.length ? [{id: "params", name: "Parameters"}] : []),
                         ...(properties?.length ? [{id: "properties", name: "Properties"}] : []),
@@ -580,7 +579,8 @@ class DocletPage {
         member: "Members",
         function: "Methods",
         constant: "Constants",
-        typedef: "Type Definitions"
+        typedef: "Type Definitions",
+        tutorial: "Tutorial"
     };
     
     /**
@@ -591,7 +591,7 @@ class DocletPage {
     static #template;
     
     /**
-     * Sets or retrieves the JSDoc master template used to render all documentation pages
+     * Sets the JSDoc master template used to render all documentation pages
      * @param {Template} [template] - the JSDoc master template to use for rendering all documentation pages
      */
     static set template(template) {
@@ -624,9 +624,10 @@ class DocletPage {
         this.env = env;
         this.doclet = source;
         this.path = source?.meta?.source;
-        this.link = helper.createLink(source);
+        this.link = source?.kind === "tutorial" ? helper.tutorialToUrl(source.name) : helper.createLink(source);
         this.heading = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]}: ` : "")
-            + `<span class="ancestors">${(source.ancestors || []).join("")}</span>` + source.name;
+            + `<span class="ancestors">${(source.ancestors || []).join("")}</span>`
+            + (source?.kind === "tutorial" ? source.title : source.name);
         this.doctitle = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]} - ` : "") + source.longname;
         this.doclets = Object.assign({}, children.reduce((members, c) => {
             if (c.kind) (members[c.kind] = members[c.kind] || []).push(c);
@@ -634,7 +635,7 @@ class DocletPage {
         }, {}));
         
         // Add any missing source pages, so they can be linked or generated
-        if (!DocletPage.#sources.has(this.path)) {
+        if (!DocletPage.#sources.has(this.path) && !!this.path) {
             DocletPage.#sources.set(this.path, {resolved: this.path, shortened: null});
         }
         
@@ -798,16 +799,18 @@ class DocletPage {
                     
                     // If the parent inherits from somewhere, assume this symbol might inherit from there too
                     for (let [type, targets] of ancestors) {
-                        // Add inheritance of specified type to the doclet
-                        if (targets.length) doclet[type] = doclet[type] ?? [];
-                        
                         // Go through each inheritable symbol to add to the doclet
                         for (let target of targets) {
                             const ancestorName = `${target}${helper.scopeToPunc[doclet.scope || "instance"]}${doclet.name}`;
                             
                             // Add ancestor to inheritance chain, and to the doclet
-                            inheritance.add(ancestorName);
-                            if (!doclet[type].includes(ancestorName)) doclet[type].push(ancestorName);
+                            if (!inheritance.has(ancestorName)) {
+                                inheritance.add(ancestorName);
+                                
+                                // Add inheritance of specified type to the doclet
+                                doclet[type] = doclet[type] ?? [];
+                                if (!doclet[type].includes(ancestorName)) doclet[type].push(ancestorName);
+                            }
                         }
                     }
                 }
@@ -1110,5 +1113,5 @@ exports.publish = (data, opts, tutorials) => {
     
     // Generate all the pages, then generate the tutorials!
     for (let page of pages) page.generate(helper.longnameToUrl[page.longname] ?? page.longname);
-    PublishUtils.generateTutorials(template, tutorials);
+    PublishUtils.generateTutorials(tutorials);
 };
