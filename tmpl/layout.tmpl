@@ -21,7 +21,9 @@
                 <?js if (this.packageData?.showName !== false || !this.packageData?.logo) { ?><span><?js= this.packageData.name ?></span><?js } ?>
             </a>
             <?js if (!!this.packageData?.version && this.packageData?.showVersion !== false) { ?>
-                <span class="package-version type-signature"><?js= this.packageData.version ?></span>
+                <span class="package-version">
+                    <span class="type-signature"><?js= this.packageData.version ?></span>
+                </span>
             <?js } ?>
         </h1>
         <h2 class="page-title"><?js= obj.heading ?></h2>
