@@ -1,5 +1,7 @@
 **Classy!** A reimplementation of the default JSDoc 3.6.x template, adding context-aware inferred ES6 class syntax doclet tags like static, alias, memberOf, and constructs for nested API classes.
 
+> Visit the <a href="https://sleelin.github.io/classy-template/" target="_blank">Example Documentation</a> to see how it looks!
+
 ##### Features
 *   Inferred context for ES6 class members/methods.
 *   Structured page navigation that matches nested ES6 API classes.
@@ -29,19 +31,23 @@ $ /path/to/jsdoc -t ./node_modules/classy-template
 ```
 
 # Configuration
-Although not required, this template works best when a JSDoc configuration file is supplied and additional template options are specified.
+This template works best when a JSDoc configuration file is supplied and additional template options are specified.
+It also includes a JSDoc plugin for correcting some anomalous behaviour when documenting JavaScript classes.
 Additionally, though not required, it is recommended you also use the JSDoc Markdown plugin as it provides extra structure to generated documentation.
 
 Example `jsdoc.json` file:
 ```json
 {
-  "plugins": ["plugins/markdown"],
+  "plugins": [
+    "plugins/markdown",
+    "classy-template/plugin"
+  ],
   "source": {
     "include": ["src"]
   },
   "opts": {
     "recurse": true,
-    "template": "./node_modules/classy-template",
+    "template": "classy-template",
     "destination": "./docs",
     "readme": "./README.md",
     "package": "./package.json"
@@ -73,15 +79,15 @@ These are specified under the "classy" section of the templates part of the JSDo
 *   `apiEntry`: full name of a namespace or class that acts as the entry point (default export) of your package.
     *   The namespace or class should be identified with a JSDoc `@name`, `@namespace`, `@class`, or `@alias` tag with the same value.
     *   When specified, classy will attempt to generate a structured "API" section in the navigation menu, with member namespaces and classes included.
-    *   If a README file is supplied to JSDoc and it includes an "API" heading, classy will automatically replace all content between the "API" heading and the next heading it finds with the contents of the entry point's `@description` JSDoc tag _in the generated index page_ (it will _not_ modify your README file).
+    *   If a README file is supplied to JSDoc, and it includes an "API" heading, classy will automatically replace all content between the "API" heading and the next heading it finds with the contents of the entry point's `@description` JSDoc tag _in the generated index page_ (it will _not_ modify your README file).
     *   If an entry point is specified, but no README is supplied, the contents of the entry point's `@description` JSDoc tag will be used as the generated index page content.
-*   `showName`: whether or not the name text should be included alongside the logo in the index page link.
+*   `showName`: whether the name text should be included alongside the logo in the index page link.
     *   If no logo has been specified, this option will be ignored and the name will be shown in the header.
     *   Defaults to true, and the name will only be hidden from the index link if this is set to the boolean value false.
-*   `showVersion`: whether or not the package version should be included after the index page link.
+*   `showVersion`: whether the package version should be included after the index page link.
     *   If no package.json file is supplied to JSDoc, this option will be ignored and no version will be included in the header.
     *   Defaults to true, and the version will only be hidden from the header if this is set to the boolean value false, or no package.json file is supplied.
-*   `showGitLink`: whether or not the git repository host logo should be shown as a link to the repository in the header.
+*   `showGitLink`: whether the git repository host logo should be shown as a link to the repository in the header.
     *   If no package.json file is supplied to JSDoc, this option will be ignored and no logo will be included in the header.
     *   Defaults to true, and the git host logo/link will only be hidden from the header if this is set to the boolean value false, or no package.json file is supplied.
     *   Currently supported git hosts are GitHub, Bitbucket, and GitLab, and any other host will be ignored and no logo will be shown.

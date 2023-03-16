@@ -30,6 +30,7 @@ class PublishUtils {
         const find = (spec) => data(spec).get();
         const {linkto, htmlsafe, resolveAuthorLinks} = helper;
         const {typeString, linkTutorial, summarise, getMasterPath} = PublishUtils;
+        const template = new JSDocTemplate(path.join(templatePath, "tmpl"));
     
         /**
          * @typedef {Template} BootstrappedTemplate
@@ -46,7 +47,7 @@ class PublishUtils {
          * @property {typeof PublishUtils#getMasterPath} getMasterPath - method for resolving the path to the master partial template to use when rendering a doclet page
          * @property {String} [boilerplateNav] - generated HTML for the main navigation menu of a page
          */
-        return Object.assign(new JSDocTemplate(path.join(templatePath, "tmpl")), {
+        return Object.assign(template, {
             // Expose doclets, package data, and source files to template
             layout, find, packageData, sourceFiles,
             // Expose useful helper functions to template
@@ -954,7 +955,8 @@ class DocletPage {
  */
 exports.publish = (data, opts, tutorials) => {
     // Get template path and overall config
-    const templatePath = path.normalize(opts.template);
+    const templateName = path.normalize(opts.template);
+    const templatePath = (templateName === env.pwd || templateName.includes("node_modules") ? templateName : path.join(".", "node_modules", templateName));
     const conf = Object.assign(
         env.conf.templates || {},
         {default: env.conf.templates.default || {}},
