@@ -68,7 +68,9 @@ Example `jsdoc.json` file:
 ```
 
 ## Options
-These are specified under the "classy" section of the templates part of the JSDoc configuration file. All values are optional.
+
+**From This Template:**  
+These are specified under the `classy` property under the templates part of the JSDoc configuration file. All values are optional.
 *   `name`: the text to use as the link to the index page, and as the alt-text for a configured logo.
     *   If a package.json file is supplied to JSDoc, this defaults to the package name specified there.
     *   Otherwise, defaults to "Home".
@@ -91,3 +93,15 @@ These are specified under the "classy" section of the templates part of the JSDo
     *   If no package.json file is supplied to JSDoc, this option will be ignored and no logo will be included in the header.
     *   Defaults to true, and the git host logo/link will only be hidden from the header if this is set to the boolean value false, or no package.json file is supplied.
     *   Currently supported git hosts are GitHub, Bitbucket, and GitLab, and any other host will be ignored and no logo will be shown.
+
+**From Default Template:**  
+Options available under the `default` JSDoc template configuration may also be used to customise the appearance and content of generated documentation.
+*   `includeDate`: whether to include the date the documentation was generated in the footer of a page. Defaults to true. 
+*   `useLongnameInNav`: whether to use a symbol's long name for its navigation menu entry. Defaults to false.
+*   `layoutFile`: path to a custom template file to use for the overall layout of all generated documentation pages. Defaults to classy's layout file.
+*   `outputSourceFiles`: whether to include links to hosted git source files, or generate and link to pages for each source file being documented.
+    *   If undefined, source file links will point to hosted git source files.
+    *   If true, source file links will point to generated source file pages.
+    *   If false, source file links and generated pages will be disabled.  
+* `staticFiles`: any additional files to be copied to the static folder in the output directory.
+    *   As with the default template, files and directories should be specified under the `include`, `includePattern`, `exclude`, and `excludePattern` child properties.
