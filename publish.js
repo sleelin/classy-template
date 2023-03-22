@@ -498,6 +498,7 @@ class PublishUtils {
     }
     
     /**
+     * Extended details about a hosted git repository from package.json
      * @typedef {Object} PackageRepositoryData
      * @property {String} type - repository version control provider type
      * @property {String} url - location of the repository hosted by a version control provider
@@ -634,7 +635,7 @@ class DocletPage {
      * List of DocletPage kinds that necessarily belong to some other parent DocletPage
      * @type {String[]}
      */
-    static members = ["member", "function", "typedef", "constant"];
+    static members = ["member", "function", "typedef", "constant", "event"];
     
     /**
      * List of DocletPage kinds that are class-like
@@ -658,6 +659,7 @@ class DocletPage {
         function: "Methods",
         constant: "Constants",
         typedef: "Type Definitions",
+        event: "Events",
         tutorial: "Tutorial"
     };
     
