@@ -27,7 +27,7 @@ class PublishUtils {
         // Normalise the template name into a usable path, and get some template config details
         const templatePath = (templateName === env.pwd || templateName.includes("node_modules") ? templateName : path.join(".", "node_modules", templateName));
         const {default: defaultConfig = {}, classy: classyConfig = {}} = env?.conf?.templates ?? {};
-    
+        
         /**
          * Template configuration, parsed and collated from JSDoc environment config
          * @typedef {Object.<string, any>} TemplateConfig
@@ -59,7 +59,7 @@ class PublishUtils {
              * @typedef {Object} ClassyTemplateConfig
              * @property {String} name - main page name
              * @property {String} logo - path to the logo, if a path was specified
-             * @property {String} apiEntry - name of doclet to treat as entrypoint of API, if specified 
+             * @property {String} apiEntry - name of doclet to treat as entrypoint of API, if specified
              * @property {Boolean} showName - whether to show the package name in the page header
              * @property {Boolean} showVersion - whether to show the package version in the page header
              * @property {Boolean} showGitLink - whether to show a link to the git repository in the page header
@@ -67,13 +67,12 @@ class PublishUtils {
             classy: {
                 ...classyConfig,
                 name: classyConfig.name ?? "Home",
-                logo: classyConfig.logo && `static/assets/logo${path.extname(classyConfig.logo)}`,
                 showName: classyConfig.showName ?? true,
                 showVersion: classyConfig.showVersion ?? true,
                 showGitLink: classyConfig.showGitLink ?? true
             }
         });
-    
+        
         /**
          * Configuration details about whether to generate pages for, or link to hosted versions of source files
          * @typedef {HostedGitData} SourceFilesData
@@ -105,7 +104,7 @@ class PublishUtils {
         const {linkto, htmlsafe, resolveAuthorLinks} = helper;
         const {typeString, linkTutorial, summarise, getMasterPath} = PublishUtils;
         const template = new JSDocTemplate(path.join(templatePath, "tmpl"));
-    
+        
         /**
          * @typedef {Template} BootstrappedTemplate
          * @property {String} layout - path to the file to use as the base layout of the template
