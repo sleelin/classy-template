@@ -1,4 +1,4 @@
-import SomeClass from "./SomeClass";
+import SomeClass from "./example";
 import * as Utils from "./utils";
 import * as Shapes from "./shapes";
 import * as Interfaces from "./interfaces";
