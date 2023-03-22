@@ -1,4 +1,6 @@
 const path = require("path");
+const Syntax = require("jsdoc/src/syntax").Syntax;
+const nodeToValue = require("jsdoc/src/astnode").nodeToValue;
 
 exports.defineTags = function (dictionary) {
     const tags = {
@@ -25,10 +27,28 @@ exports.defineTags = function (dictionary) {
             }
         }
     });
-}
+};
 
 exports.handlers = {
+    symbolFound(e) {
+        const {node} = e.code ?? {};
+        const {type, value} = node ?? {};
+        
+        // Class properties with default values shouldn't need to explicitly declare themselves
+        if (type === Syntax.ClassProperty && !!value) e.code.value = nodeToValue(value);
+    },
     parseComplete(e) {
+        // Set default values when the @default tag was omitted
+        for (let d of e.doclets.filter(d => !d.undocumented && d.defaultvalue === undefined && d?.meta?.code?.value)) {
+            d.defaultvalue = d.meta.code.value;
+            
+            // Get the default value type from the underlying node
+            for (let {type} of [d.meta.code.node, d.meta.code.node?.value ?? {}]) {
+                if (type === Syntax.ArrayExpression) d.defaultvaluetype = "array";
+                if (type === Syntax.ObjectExpression) d.defaultvaluetype = "object";
+            }
+        }
+        
         // Go through source files to get classdesc from class or interface constructors
         for (let sourcefile of e.sourcefiles) {
             const filepath = path.dirname(sourcefile);
@@ -93,7 +113,7 @@ exports.handlers = {
             }
         }
     }
-}
+};
 
 /* ************************************************************* *
  *  For a package whose purpose is documentation of code,        *

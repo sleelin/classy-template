@@ -3,7 +3,7 @@
 > Visit the <a href="https://sleelin.github.io/classy-template/" target="_blank">Example Documentation</a> to see how it looks!
 
 ##### Features
-*   Inferred context for ES6 class members/methods.
+*   Inferred context for ES6 class members/methods, as well as default values.
 *   Structured page navigation that matches nested ES6 API classes.
 *   Table of contents for each page, automatically sourced from documentation contents.
 *   Optionally link to git-hosted source files instead of generating extra source pages.
