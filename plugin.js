@@ -102,6 +102,14 @@ exports.handlers = {
  * ************************************************************* */
 
 /**
+ * Package data, parsed and collated from package.json
+ * @typedef {Object.<string, any>} PackageData
+ * @property {String} version - package version from package.json
+ * @property {String} author - package author from package.json
+ * @property {String|PackageRepositoryData} repository - location or details of the repository on a hosted git provider
+ */
+
+/**
  * @typedef {JSDocDoclet} ClassyDoclet
  * @property {String} [title] - the first line of the doclet, where the doclet is classlike, or includes multiple description tags
  */

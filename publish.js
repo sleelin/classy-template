@@ -17,25 +17,99 @@ const outdir = path.normalize(env.opts.destination);
  */
 class PublishUtils {
     /**
+     * Get the path to the template files, template configuration, and source files configuration for publishing
+     * @param {String} templateName - name of the template supplied to JSDoc, for normalisation
+     * @param {String} packageJsonPath - path to the package.json file of the package being documented
+     * @param {String|PackageRepositoryData} packageRepository - value of the repository property in the package.json file
+     * @returns {{templatePath: String, templateConfig: TemplateConfig, sourceFiles: SourceFilesData}}
+     */
+    static getPublishConfig(templateName, packageJsonPath, packageRepository) {
+        // Normalise the template name into a usable path, and get some template config details
+        const templatePath = (templateName === env.pwd || templateName.includes("node_modules") ? templateName : path.join(".", "node_modules", templateName));
+        const {default: defaultConfig = {}, classy: classyConfig = {}} = env?.conf?.templates ?? {};
+        
+        /**
+         * Template configuration, parsed and collated from JSDoc environment config
+         * @typedef {Object.<string, any>} TemplateConfig
+         * @property {DefaultTemplateConfig} default - configuration options for the default JSDoc template
+         * @property {ClassyTemplateConfig} classy - configuration options for classy template
+         */
+        const templateConfig = Object.assign(env.conf.templates ?? {}, {
+            /**
+             * Configuration options for the default JSDoc template
+             * @typedef {Object.<string, any>} DefaultTemplateConfig
+             * @property {Boolean} includeDate - whether to include the date the documentation was generated in the footer of a page
+             * @property {Boolean} outputSourceFiles - whether to generate, and link to, pages for each source file being documented
+             * @property {Boolean} [useLongnameInNav] - whether to use a symbol's long name for its navigation menu entry
+             * @property {String} [layoutFile] - path to the template file to use for the overall layout of a documentation page
+             * @property {Object} [staticFiles] - any additional files to be copied to the static folder in the output directory
+             * @property {String[]} [staticFiles.include] - a list of paths whose contents should be copied to the output directory
+             * @property {String[]} [staticFiles.includePattern] - a list of regular expression indicating which specific files should be copied
+             * @property {String[]} [staticFiles.exclude] - a list of paths that should not be copied to the output directory
+             * @property {String[]} [staticFiles.excludePattern] - a list of regular expression indicating which specific files should be skipped
+             */
+            default: {
+                ...defaultConfig,
+                includeDate: defaultConfig?.includeDate ?? true,
+                outputSourceFiles: defaultConfig?.outputSourceFiles,
+                ...(defaultConfig?.layoutFile ? {layoutFile: defaultConfig.layoutFile} : {})
+            },
+            /**
+             * Configuration options for classy template
+             * @typedef {Object} ClassyTemplateConfig
+             * @property {String} name - main page name
+             * @property {String} logo - path to the logo, if a path was specified
+             * @property {String} apiEntry - name of doclet to treat as entrypoint of API, if specified
+             * @property {Boolean} showName - whether to show the package name in the page header
+             * @property {Boolean} showVersion - whether to show the package version in the page header
+             * @property {Boolean} showGitLink - whether to show a link to the git repository in the page header
+             */
+            classy: {
+                ...classyConfig,
+                name: classyConfig.name ?? "Home",
+                showName: classyConfig.showName ?? true,
+                showVersion: classyConfig.showVersion ?? true,
+                showGitLink: classyConfig.showGitLink ?? true
+            }
+        });
+        
+        /**
+         * Configuration details about whether to generate pages for, or link to hosted versions of source files
+         * @typedef {HostedGitData} SourceFilesData
+         * @property {Boolean} output - whether the source files should be generated as standalone pages
+         * @property {String} line - prefix to use when linking to specific lines in source files
+         */
+        const sourceFiles = {
+            output: templateConfig?.default?.outputSourceFiles !== false, line: "L",
+            ...PublishUtils.getRepository(packageJsonPath, packageRepository)
+        };
+        
+        // Return the collated config for publish
+        return {templatePath, templateConfig, sourceFiles};
+    }
+    
+    /**
      * Instantiate the JSDoc Template and make useful details available when rendering
      * @param {String} templatePath - path to the directory containing the template files
-     * @param {String} layoutFile - name of the file to use as the base layout of the template
+     * @param {TemplateConfig} templateConfig - template configuration, parsed and collated from JSDoc environment
      * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
      * @param {PackageData} packageData - details about the package and template configuration
      * @param {SourceFilesData} sourceFiles - details about how source files are being handled
      * @returns {BootstrappedTemplate} an instance of a JSDoc Template, with useful details and methods added
      */
-    static bootstrapTemplate(templatePath, layoutFile, data, packageData, sourceFiles) {
+    static bootstrapTemplate(templatePath, templateConfig, data, packageData, sourceFiles) {
+        const {default: {layoutFile} = {}} = templateConfig ?? {};
         const layout = !layoutFile ? "layout.tmpl" : JSDocPath.getResourcePath(path.dirname(layoutFile), path.basename(layoutFile));
         const find = (spec) => data(spec).get();
         const {linkto, htmlsafe, resolveAuthorLinks} = helper;
         const {typeString, linkTutorial, summarise, getMasterPath} = PublishUtils;
         const template = new JSDocTemplate(path.join(templatePath, "tmpl"));
-    
+        
         /**
          * @typedef {Template} BootstrappedTemplate
          * @property {String} layout - path to the file to use as the base layout of the template
          * @property {Function} find - method for querying and reading raw doclet data from within the template
+         * @property {TemplateConfig} templateConfig - template configuration, parsed and collated from JSDoc environment
          * @property {PackageData} packageData - details about the package and template configuration
          * @property {SourceFilesData} sourceFiles - details about how source files are being handled
          * @property {typeof helper.linkto} linkto - method for linking to other doclet pages, from JSDoc template helper library
@@ -49,7 +123,7 @@ class PublishUtils {
          */
         return Object.assign(template, {
             // Expose doclets, package data, and source files to template
-            layout, find, packageData, sourceFiles,
+            layout, find, templateConfig, packageData, sourceFiles,
             // Expose useful helper functions to template
             linkto, htmlsafe, resolveAuthorLinks,
             // Expose useful PublishUtils functions and values to template
@@ -444,8 +518,10 @@ class PublishUtils {
         // Only continue if git dir exists
         if (fs.existsSync(gitDir)) {
             try {
-                const ref = fs.readFileSync(path.join(gitDir, "HEAD"), "utf8").replace("ref: ", "").trim();
-                const commitish = fs.readFileSync(path.join(gitDir, ref), "utf8").trim();
+                // Get the current HEAD ref, which may be a commit or a branch name
+                const ref = fs.readFileSync(path.join(gitDir, "HEAD"), "utf8").trim();
+                // It's either a commit, or a branch ref that needs resolving to a commit 
+                const commitish = (!ref.startsWith("ref: ") ? ref : fs.readFileSync(path.join(gitDir, ref.replace("ref: ", "")), "utf8").trim());
                 
                 return PublishUtils.resolveGitHost(repository, commitish) ?? {};
             } catch (ex) {
@@ -453,7 +529,7 @@ class PublishUtils {
             }
         }
         
-        return {};
+        return PublishUtils.resolveGitHost(repository) ?? {};
     }
     
     /**
@@ -485,22 +561,22 @@ class PublishUtils {
     static #gitHosts = {
         github: (path, commitish) => ({
             name: "GitHub", link: `https://github.com/${path}`, image: "github.png",
-            path: `https://github.com/${path}/blob/${commitish}/`, line: "L"
+            path: !!commitish && `https://github.com/${path}/blob/${commitish}/`, line: "L"
         }),
         bitbucket: (path, commitish) => ({
             name: "Bitbucket", link: `https://bitbucket.org/${path}`, image: "bitbucket.svg",
-            path: `https://bitbucket.org/${path}/src/${commitish}/`, line: "line-"
+            path: !!commitish && `https://bitbucket.org/${path}/src/${commitish}/`, line: "line-"
         }),
         gitlab: (path, commitish) => ({
             name: "GitLab", link: `https://gitlab.com/${path}`, image: "gitlab.svg",
-            path: `https://gitlab.com/${path}/blob/${commitish}/`, line: "L"
+            path: !!commitish && `https://gitlab.com/${path}/blob/${commitish}/`, line: "L"
         })
     }
     
     /**
      * Extract details about, and resolve configuration for source files located on a hosted git provider
      * @param {String|PackageRepositoryData} repository - location or details of the repository on a hosted git provider
-     * @param {String} commitish - a commit hash or similar string that identifies exactly what version of a source file should be linked to
+     * @param {String} [commitish] - a commit hash or similar string that identifies exactly what version of a source file should be linked to
      * @returns {HostedGitData} configuration details for a given hosted git provider
      */
     static resolveGitHost(repository, commitish) {
@@ -954,44 +1030,9 @@ class DocletPage {
  * @param {Tutorial} tutorials
  */
 exports.publish = (data, opts, tutorials) => {
-    // Get template path and overall config
-    const templateName = path.normalize(opts.template);
-    const templatePath = (templateName === env.pwd || templateName.includes("node_modules") ? templateName : path.join(".", "node_modules", templateName));
-    const conf = Object.assign(
-        env.conf.templates || {},
-        {default: env.conf.templates.default || {}},
-        {classy: env.conf.templates.classy || {}}
-    );
-    
-    /**
-     * Package data, parsed and collated from package.json and template config
-     * @typedef {Object.<string, any>} PackageData
-     * @property {String} name - package or main page name
-     * @property {String} [logo] - path to the logo, if a path was specified
-     * @property {Boolean} showName - whether to show the package name in the page header
-     * @property {Boolean} showVersion - whether to show the package version in the page header
-     * @property {Boolean} showGitLink - whether to show a link to the git repository in the page header
-     */
-    const packageData = Object.assign(
-        {name: "Home"},
-        data({kind: "package"}).first() || {},
-        (conf.classy.name ? {name: conf.classy.name} : {}),
-        (conf.classy.logo ? {logo: `static/assets/logo${path.extname(conf.classy.logo)}`} : {}),
-        {showName: conf.classy.showName ?? true},
-        {showVersion: conf.classy.showVersion ?? true},
-        {showGitLink: conf.classy.showGitLink ?? true}
-    );
-    
-    /**
-     * Configuration details about whether to generate pages for, or link to hosted versions of source files
-     * @typedef {HostedGitData} SourceFilesData
-     * @property {Boolean} output - whether the source files should be generated as standalone pages
-     * @property {String} line - prefix to use when linking to specific lines in source files
-     */
-    const sourceFiles = {
-        output: conf?.default?.outputSourceFiles !== false, line: "line",
-        ...PublishUtils.getRepository(opts.package, packageData.repository)
-    };
+    // Get package data, template path and overall config
+    const packageData = data({kind: "package"}).first() ?? {};
+    const {templatePath, templateConfig, sourceFiles} = PublishUtils.getPublishConfig(path.normalize(opts.template), opts.package, packageData.repository);
     
     // Claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
     const globalUrl = helper.getUniqueFilename("global");
@@ -1006,24 +1047,24 @@ exports.publish = (data, opts, tutorials) => {
     JSDocFS.mkPath(outdir);
     
     // Set up templating and handle static files
-    const template = DocletPage.template = PublishUtils.bootstrapTemplate(templatePath, conf.default.layoutFile, data, packageData, sourceFiles);
-    PublishUtils.handleStatics(templatePath, conf.default.staticFiles, {logo: conf.classy.logo, gitImage: sourceFiles.image});
+    const template = DocletPage.template = PublishUtils.bootstrapTemplate(templatePath, templateConfig, data, packageData, sourceFiles);
+    PublishUtils.handleStatics(templatePath, templateConfig?.default?.staticFiles, {logo: templateConfig.classy.logo, gitImage: sourceFiles.image});
     
     // Prepare all doclets for consumption
     DocletPage.restructure(data({scope: "global", kind: DocletPage.containers}).get(), data);
-    DocletPage.declare(data().get(), conf.classy.apiEntry, indexUrl);
+    DocletPage.declare(data().get(), templateConfig.classy.apiEntry, indexUrl);
     DocletPage.inherit(data().get(), data);
     DocletPage.sign(data().get(), data);
     pages.push(...[
         // Create pages for all container-type doclets
         ...data({kind: DocletPage.containers}).get()
             .map(doclet => new DocletPage(doclet, data({memberof: doclet.longname}).get())),
-        // ...as well as any corresponding source files, if enabled, and gitPath not specified
-        ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, conf?.default?.outputSourceFiles !== true && sourceFiles.path) : [])
+        // ...as well as any corresponding source files, if enabled, and gitPath not specified or source file output explicitly enabled
+        ...(sourceFiles.output ? DocletPage.sources(data().get(), opts, templateConfig?.default?.outputSourceFiles !== true && sourceFiles.path) : [])
     ]);
     
     // Prepare template's common nav structure
-    PublishUtils.buildBoilerplateNav(template, data, tutorials.children, conf.classy.apiEntry);
+    PublishUtils.buildBoilerplateNav(template, data, tutorials.children, templateConfig.classy.apiEntry);
     
     // Extract the main page title from the readme
     let readme = opts.readme && JSDOM.fragment(opts.readme);
@@ -1031,9 +1072,9 @@ exports.publish = (data, opts, tutorials) => {
     const heading = (!readme || !headingEl ? "Home" : readme.removeChild(headingEl).textContent);
     
     // Find the API entry doclet (if specified) and move it to the index
-    if (!!conf.classy.apiEntry) {
+    if (!!templateConfig.classy.apiEntry) {
         // Find the doclet and remove it from pages - it no longer gets its own page
-        const entry = data({kind: DocletPage.containers, longname: conf.classy.apiEntry}).first();
+        const entry = data({kind: DocletPage.containers, longname: templateConfig.classy.apiEntry}).first();
         const index = pages.indexOf(new DocletPage(entry));
         const page = (index >= 0 ? pages.splice(index, 1).pop() : false);
         
