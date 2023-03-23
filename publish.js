@@ -278,7 +278,7 @@ class PublishUtils {
      * @returns {String} the concatenated and render-safe attributes list string value
      */
     static attribsString(attribs) {
-        return attribs.length ? helper.htmlsafe(`(${attribs.join(", ")})`) : "";
+        return attribs.length ? helper.htmlsafe(`(${attribs.filter(a => a !== "constant").join(", ")})`) : "";
     }
     
     /**
