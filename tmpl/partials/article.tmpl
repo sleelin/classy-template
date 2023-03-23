@@ -4,10 +4,11 @@
         <?js if (obj.summary) { ?><div class="summary"><?js= obj.summary ?></div><?js } ?>
         <?js if (obj.description) { ?><div class="description"><?js= obj.description ?></div><?js } ?>
     </header>
-    
     <?js= this.partial("partials/details.tmpl", obj) ?>
-    <?js= this.partial("tags/modifies.tmpl", obj) ?>
-    <?js= this.partial("tags/returns.tmpl", {title: "Returns:", items: obj.returns}) ?>
-    <?js= this.partial("tags/returns.tmpl", {title: "Yields:", items: obj.yields}) ?>
+    <?js if (obj.signature) { ?>
+        <?js= this.partial("tags/modifies.tmpl", obj) ?>
+        <?js= this.partial("tags/returns.tmpl", {title: "Returns:", items: obj.returns}) ?>
+        <?js= this.partial("tags/returns.tmpl", {title: "Yields:", items: obj.yields}) ?>
+    <?js } ?>
     <?js= this.partial("tags/examples.tmpl", obj) ?>
 </article>
