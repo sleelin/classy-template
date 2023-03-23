@@ -8,6 +8,7 @@ const JSDocPath = require("jsdoc/path");
 const JSDocTemplate = require("jsdoc/template").Template;
 const JSDocFilter = require("jsdoc/src/filter").Filter;
 const JSDocScanner = require("jsdoc/src/scanner").Scanner;
+const JSDocSyntax = require("jsdoc/src/syntax").Syntax;
 const {JSDOM} = require("jsdom");
 const outdir = path.normalize(env.opts.destination);
 
@@ -813,8 +814,8 @@ class DocletPage {
                 
                 // Fix the symbol's scope, membership, and long name!
                 for (let child of children) {
-                    // Only change the scope for method definitions...
-                    if (["MethodDefinition"].includes(child?.meta?.code?.type)) {
+                    // Only change the scope for method definitions and class properties...
+                    if ([JSDocSyntax.MethodDefinition, JSDocSyntax.ClassProperty].includes(child?.meta?.code?.type)) {
                         child.setScope(child?.meta?.code?.node?.static ? "static" : "instance");
                     }
                     

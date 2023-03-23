@@ -41,7 +41,7 @@ export default class ExampleClass {
     constructor(param1, param2 = {}, param3 = false) {
         this.prop1 = param1;
         this.prop2 = param3;
-    
+        
         /**
          * @typedef {Object} Geometry.ExampleClass~ExampleType
          * @property {String} str - a string property of an object property
@@ -52,6 +52,12 @@ export default class ExampleClass {
             num: param2.prop2
         };
     }
+    
+    /**
+     * An example of a static member of a class, with a default value
+     * @type {String[]}
+     */
+    static titles = ["An Example"];
     
     /**
      * Says hello
@@ -80,6 +86,5 @@ export default class ExampleClass {
  * @type {String[]}
  * @alias ExampleStrings
  * @memberOf Geometry.ExampleClass
- * @default
  */
 const strings = ["and", "or", "not"];
