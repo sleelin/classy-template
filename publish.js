@@ -235,6 +235,15 @@ class PublishUtils {
     }
     
     /**
+     * Convert a given string (e.g. a doclet title or ID) into its simple plural form, excluding complex plurals (e.g. tooth/teeth)
+     * @param {String} string - the string to be pluralised
+     * @returns {String} the pluralised version of the supplied string, or the original if already plural
+     */
+    static pluralise(string) {
+        return string.match(/[^s]s$/) ? string : `${string}s`.replace(/ys$/, "ies").replace(/([xs])s$/, "$1es");
+    }
+    
+    /**
      * Generate all specified tutorials using the given template
      * @param {Tutorial[]} tutorials - tutorials whose content should be rendered
      */
@@ -401,7 +410,7 @@ class PublishUtils {
      * @returns {TOCHeading[]} a list of items describing the table of contents menu of a page
      */
     static getTocStructure(page) {
-        const {kind, description, doclets: children, examples, params, properties} = page;
+        const {kind, description, doclets, examples, params, properties} = page;
         
         // Get titles in description from heading elements with "id" attribute
         const targets = [...JSDOM.fragment(description).querySelectorAll(`[id]`)]
@@ -458,19 +467,17 @@ class PublishUtils {
             ]
         ));
         
-        // Add titles for each container section
-        for (let c of DocletPage.containers) if (children[c]?.length) {
-            const name = `${DocletPage.titles[c]}${c === "class" ? "es" : "s"}`;
-            headings.push({id: name.toLowerCase(), name, section: true});
-        }
-        
-        // Add titles for each member section
-        for (let m of DocletPage.members) if (children[m]?.length) {
-            headings.push({
-                id: DocletPage.titles[m].toLowerCase(), name: DocletPage.titles[m], section: true,
-                // As well as entries for each member
-                children: children[m].map(d => ({id: d.id, name: `${m === "constant" ? "" : d.attribs}${d.name}`}))
-            });
+        // Add headings for each container and member section
+        for (let kind of [...DocletPage.containers, ...DocletPage.members]) if (doclets[kind]?.length) {
+            // Get pluralised id and name for each section
+            const id = PublishUtils.pluralise(kind === "function" ? "method" : kind);
+            const name = PublishUtils.pluralise(DocletPage.titles[kind]);
+            // Only add child entries for member sections
+            const children = !DocletPage.members.includes(kind) ? [] : doclets[kind]
+                .map(({id, name, attribs}) => ({id, name: `${kind === "constant" ? "" : attribs}${name}`}));
+            
+            // Add the heading!
+            headings.push({id, name, children, section: true});
         }
         
         return headings;
@@ -498,6 +505,7 @@ class PublishUtils {
     }
     
     /**
+     * Extended details about a hosted git repository from package.json
      * @typedef {Object} PackageRepositoryData
      * @property {String} type - repository version control provider type
      * @property {String} url - location of the repository hosted by a version control provider
@@ -634,7 +642,7 @@ class DocletPage {
      * List of DocletPage kinds that necessarily belong to some other parent DocletPage
      * @type {String[]}
      */
-    static members = ["member", "function", "typedef", "constant"];
+    static members = ["member", "function", "typedef", "constant", "event"];
     
     /**
      * List of DocletPage kinds that are class-like
@@ -654,10 +662,11 @@ class DocletPage {
         external: "External",
         interface: "Interface",
         source: "Source",
-        member: "Members",
-        function: "Methods",
-        constant: "Constants",
-        typedef: "Type Definitions",
+        member: "Member",
+        function: "Method",
+        constant: "Constant",
+        typedef: "Type Definition",
+        event: "Event",
         tutorial: "Tutorial"
     };
     
