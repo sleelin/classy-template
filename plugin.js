@@ -1,4 +1,5 @@
 const path = require("path");
+const helper = require("jsdoc/lib/jsdoc/util/templateHelper");
 const Syntax = require("jsdoc/src/syntax").Syntax;
 const nodeToValue = require("jsdoc/src/astnode").nodeToValue;
 
@@ -29,6 +30,68 @@ exports.defineTags = function (dictionary) {
     });
 };
 
+/**
+ * Collection of methods that filter doclets, or return methods that filter doclets
+ * @typedef {Object.<string, (function|FilterMethod)>} Filters
+ */
+const Filters = {
+    /**
+     * @callback FilterMethod
+     * @param {ClassyDoclet} d - the doclet being filtered
+     * @returns {Boolean} whether the given doclet meets the test
+     */
+    
+    /**
+     * Checks whether the given doclet has an associated comment
+     * @type {FilterMethod}
+     */
+    hasComment: (d) => (!!d.comment),
+    /**
+     * Checks whether the given doclet is marked as documented
+     * @type {FilterMethod}
+     */
+    isDocumented: (d) => (!d.undocumented),
+    /**
+     * Checks whether the given doclet is documented and for a class symbol
+     * @type {FilterMethod}
+     */
+    isClass: (d) => (Filters.isDocumented(d) && d.kind === "class"),
+    /**
+     * Checks whether the given doclet is documented and for an interface symbol
+     * @type {FilterMethod}
+     */
+    isInterface: (d) => (Filters.isDocumented(d) && d.kind === "interface"),
+    /**
+     * Checks whether the given doclet is documented and for a class-like symbol
+     * @type {FilterMethod}
+     */
+    isClassLike: (d) => (Filters.isDocumented(d) && ["namespace", "class", "interface"].includes(d.kind)),
+    /**
+     * Checks whether the given doclet is documented and for a container symbol
+     * @type {FilterMethod}
+     */
+    isContainer: (d) => (Filters.isDocumented(d) && ["module", "class", "namespace", "mixin", "external", "interface"].includes(d.kind)),
+    /**
+     * Create a method to check whether a given doclet can be found in the same source file as specified
+     * @param {String} filepath - the path to the directory the given doclet's source file belongs to 
+     * @param {String} filename - the name of the source file the given doclet should be found in 
+     * @returns {FilterMethod} method to determine whether a given doclet is found in the same source file as specified
+     */
+    isInSameFile: (filepath, filename) => ((d) => (d?.meta?.path === filepath && d?.meta?.filename === filename)),
+    /**
+     * Checks whether the given doclet is documented and has a default value not explicitly marked by the @default tag
+     * @type {FilterMethod}
+     */
+    hasDefaultValue: (d) => (Filters.isDocumented(d) && d.defaultvalue === undefined && d?.meta?.code?.value),
+    /**
+     * Create a method to check whether a given doclet's node name or leading comment match those specified
+     * @param {String} name - the name of the documented symbol to compare with
+     * @param {String} comment - the leading comment to search a doclet's node for
+     * @returns {FilterMethod} method to determine whether a given doclet's node name or leading comment match those specified
+     */
+    hasMatchingNode: (name, comment) => (({meta: {code: {node}}}) => (name === node?.id?.name || comment === `/*${node?.leadingComments?.slice?.(-1)?.pop?.()?.value ?? ""}*/`))
+}
+
 exports.handlers = {
     symbolFound(e) {
         const {node} = e.code ?? {};
@@ -38,88 +101,140 @@ exports.handlers = {
         if (type === Syntax.ClassProperty && !!value) e.code.value = nodeToValue(value);
     },
     parseComplete(e) {
-        // Set default values when the @default tag was omitted
-        for (let d of e.doclets.filter(d => !d.undocumented && d.defaultvalue === undefined && d?.meta?.code?.value)) {
-            d.defaultvalue = d.meta.code.value;
-            
-            // Get the default value type from the underlying node
-            for (let {type} of [d.meta.code.node, d.meta.code.node?.value ?? {}]) {
-                if (type === Syntax.ArrayExpression) d.defaultvaluetype = "array";
-                if (type === Syntax.ObjectExpression) d.defaultvaluetype = "object";
-            }
-        }
-        
         // Go through source files to get classdesc from class or interface constructors
         for (let sourcefile of e.sourcefiles) {
-            const filepath = path.dirname(sourcefile);
-            const filename = path.basename(sourcefile);
-            // Get doclets within this source file, then get doclets that describe a class declaration
-            const doclets = e.doclets.filter(d => (d?.meta?.path === filepath && d?.meta?.filename === filename && !!d.comment));
-            const classdecs = doclets.filter(d => (!d.undocumented && d.kind === "class"));
-            // Get doclets that describe an interface declaration, then sort by line number
-            const ifaces = doclets.filter(d => (!d.undocumented && d.kind === "interface"))
-                .sort((a, b) => a?.meta?.lineno - b?.meta?.lineno);
+            // Get doclets within this source file, then get doclets that are commented and sort by line number
+            const symbols = [...e.doclets].filter(Filters.isInSameFile(path.dirname(sourcefile), path.basename(sourcefile)));
+            const doclets = symbols.filter(Filters.hasComment).sort((a, b) => a?.meta?.lineno - b?.meta?.lineno);
             
-            // Go through class declarations and get the constructor description
-            for (let classdec of classdecs) if (!classdec.undocumented) {
-                // Get some positional details for finding the next doclet that could be a constructor
-                const [firstPos = Infinity, lastPos = - 1] = classdec?.meta?.range ?? [];
-                const {title, meta: {lineno: firstLine}} = classdec;
-                const nextIndex = classdecs.indexOf(classdec) + 1;
-                const lastLine = nextIndex >= classdecs.length ? Infinity : classdecs[nextIndex]?.meta?.lineno;
-                // Get the first "undocumented" or wrongly documented doclet between start and end of class declaration
-                const constructor = doclets.find(({undocumented, kind, scope, meta: {lineno, range: [start, finish] = []} = {}}) => (
-                    (undocumented && kind === "class" && scope === "instance" && (start > firstPos && finish < lastPos)) 
-                    || (kind === "class" && scope === "static" && (lineno > firstLine && lineno <= lastLine)))) ?? {};
-                const {description, classdesc, params, properties} = constructor;
-                
-                // If the descriptions don't match, use class constructor description as the classdesc
-                if (!!description && classdec.description !== description) classdec.classdesc = description;
-                // Otherwise, assume the description is meant to be the classdesc
-                else {
-                    classdec.classdesc = classdec.description;
-                    classdec.description = "";
-                }
-                
-                // Mark the constructor as undocumented and proceed to copy missing details
-                Object.assign(constructor, {undocumented: true});
-                Object.assign(classdec, {
-                    description: classdec.description === `<p>${title}</p>` ? "" : classdec.description,
-                    ...(classdesc ? {classdesc} : {}),
-                    ...(params ? {params} : {}),
-                    ...(properties ? {properties} : {})
-                });
-            }
+            // Fix duplication of classes due to mishandled constructors
+            for (let d of symbols) if (d?.meta?.code?.node?.kind === "constructor") d.undocumented = true;
             
-            // Go through interface declarations and get the constructor description
-            for (let iface of ifaces) {
-                // Get some positional details for finding the next doclet that could be a constructor
-                const {title, description, meta: {lineno: firstLine}} = iface;
-                const nextIndex = ifaces.indexOf(iface) + 1;
-                const lastLine = nextIndex >= ifaces.length ? Infinity : ifaces[nextIndex]?.meta?.lineno;
-                // Get the first "undocumented" or wrongly documented doclet between start and end of interface declaration
-                const constructor = doclets.find(({kind, scope, meta: {lineno} = {}}) =>
-                    (kind === "class" && scope === "static" && (lineno >= firstLine && lineno <= lastLine))) ?? {};
-                const {classdesc, params, properties} = constructor;
-                
-                // Mark the constructor as undocumented and proceed to copy missing details
-                Object.assign(constructor, {undocumented: true});
-                Object.assign(iface, {
-                    description: description === `<p>${title}</p>` ? "" : description,
-                    ...(classdesc ? {classdesc, virtual: true} : {}),
-                    ...(params ? {params} : {}),
-                    ...(properties ? {properties} : {})
-                });
-            }
+            // Go through and fix various issues with tags and generally incorrect doclet details
+            fixDocletDefaultValues(symbols.filter(Filters.hasDefaultValue));
+            fixDocletMetaCodeNodes(doclets.filter(Filters.isClassLike), symbols);
+            fixDocletClassConstructors(doclets.filter(Filters.isClass), doclets);
+            fixDocletClassConstructors(doclets.filter(Filters.isInterface), doclets);
+            fixDocletDescendants(doclets.filter(Filters.isContainer), doclets);
         }
     }
 };
 
-/* ************************************************************* *
- *  For a package whose purpose is documentation of code,        *
- *  JSDoc 3.x is disappointingly lacking in code documentation.  *
- *  As a workaround, the following attempts to fix that...       *
- * ************************************************************* */
+/**
+ * Set default values when the @default tag was omitted, but surrounding code has a value
+ * @param {ClassyDoclet[]} doclets - list of doclets to iterate through and fix
+ */
+function fixDocletDefaultValues(doclets) {
+    for (let d of doclets) {
+        d.defaultvalue = d.meta.code.value;
+        
+        // Get the default value type from the underlying node
+        for (let {type} of [d.meta.code.node, d.meta.code.node?.value ?? {}]) {
+            if (type === Syntax.ArrayExpression) d.defaultvaluetype = "array";
+            if (type === Syntax.ObjectExpression) d.defaultvaluetype = "object";
+        }
+    }
+}
+
+/**
+ * Find and set missing AST nodes belonging to the given doclets
+ * @param {ClassyDoclet[]} targets - list of targets to iterate through and fix
+ * @param {ClassyDoclet[]} doclets - list of doclets that may have the given target's missing AST node
+ */
+function fixDocletMetaCodeNodes(targets, doclets) {
+    // Go through all doclets to find and fix their code references
+    for (let target of targets) {
+        // Get doclet details for matching, then find any potentially matching symbols
+        const {name, comment, meta} = target;
+        const matching = doclets.filter(Filters.hasMatchingNode(name, comment));
+        // Get the correct code details from the matching symbol (and fix its name)
+        const code = Object.assign(matching.pop()?.meta?.code ?? meta.code, {name});
+        const range = code?.node?.range;
+        
+        // Set the correct code details on the doclet!
+        Object.assign(meta, {code, ...(!!range ? {range} : {})});
+    }
+}
+
+/**
+ * Find and set missing class constructor details for the given doclets
+ * @param {ClassyDoclet[]} targets - list of targets to iterate through and fix
+ * @param {ClassyDoclet[]} doclets - list of doclets that may have the given target's missing constructor details
+ */
+function fixDocletClassConstructors(targets, doclets) {
+    // Go through doclets and get the constructor description
+    for (let target of targets) if (!target.undocumented) {
+        // Get some positional details for finding the next doclet that could be a constructor
+        const {title, meta: {range}} = target;
+        const [firstPos = Infinity, lastPos = -1] = range ?? [];
+        const [nextFirstPos = Infinity, nextLastPos = Infinity] = targets?.[targets.indexOf(target) + 1]?.meta?.range ?? [];
+        // Get the first "undocumented" or wrongly documented doclet between start and end of class declaration
+        const constructor = doclets.find(({meta: {code, range: [start, finish] = []} = {}}) =>
+            (code?.node?.kind === "constructor" && start > firstPos && finish < lastPos
+                && (start < nextFirstPos || start > nextLastPos))) ?? {};
+        const {classdesc, params, properties} = constructor;
+        
+        // If the descriptions don't match, use class constructor description as the classdesc
+        if (!!constructor.description && constructor.description !== target.description) {
+            target.classdesc = constructor.description;
+        }
+        // Otherwise, for classes, assume the description is meant to be the classdesc
+        else if (Filters.isClass(target)) {
+            target.classdesc = target.description;
+            target.description = "";
+        }
+        
+        // Mark the constructor as undocumented and proceed to copy missing details
+        Object.assign(constructor, {undocumented: true});
+        Object.assign(target, {
+            description: target.description === `<p>${title}</p>` ? "" : target.description,
+            ...(Filters.isInterface(target) ? {virtual: true} : {}),
+            ...(classdesc ? {classdesc} : {}),
+            ...(params ? {params} : {}),
+            ...(properties ? {properties} : {})
+        });
+    }
+}
+
+/**
+ * Fix doclets where membership and scope aren't explicit
+ * @param {ClassyDoclet[]} targets - list of targets to iterate through and find missing children for
+ * @param {ClassyDoclet[]} doclets - list of doclets that may be children of a given target
+ */
+function fixDocletDescendants(targets, doclets) {
+    // Go through all targets and get their missing children
+    for (let target of targets) {
+        // Get some positional details for finding all doclets that could be children of this container
+        const {meta: {lineno: firstLine, range, code}} = target;
+        const lastLine = code?.node?.loc?.end?.line ?? 0;
+        // Get all doclets that are found between this container and the next
+        const children = doclets.filter(({undocumented, meta: {lineno} = {}}) =>
+            (!undocumented && (lineno > firstLine && lineno < lastLine)));
+        
+        // Fix the symbol's scope, membership, and long name!
+        for (let child of children) {
+            // Only change the scope for method definitions and class properties...
+            if ([Syntax.MethodDefinition, Syntax.ClassProperty].includes(child?.meta?.code?.type)) {
+                child.setScope(child?.meta?.code?.node?.static ? "static" : "instance");
+            }
+            
+            // ...but always update membership and long name
+            child.setMemberof(target.longname);
+            child.setLongname(`${target.longname}${helper.scopeToPunc[child.scope]}${child.name}`);
+        }
+    }
+}
+
+/* ************************************************************************ *
+ *  For a package whose purpose is documentation of code,                   *
+ *  JSDoc 3.x and 4.x is disappointingly lacking in code documentation.     *
+ *  As a workaround, the following attempts to fix that...                  *
+ * ************************************************************************ */
+
+/**
+ * JSDoc's drop-in replacement of (some) of TAFFYDB's functionality
+ * @external Salty
+ */
 
 /**
  * Package data, parsed and collated from package.json
@@ -136,6 +251,9 @@ exports.handlers = {
 
 /**
  * @typedef {Doclet} JSDocDoclet
+ * @property {Function} setScope - method to set the doclet's "scope" property
+ * @property {Function} setLongname - method to set the doclet's "longname" property
+ * @property {Function} setMemberof - method to set the doclet's "memberof" property
  * @property {String} [comment] - the original text of the comment from the source code
  * @property {DocletMeta} [meta] - information about the source code associated with this doclet
  * @property {String} [kind] - the kind of symbol being documented by this doclet - see [the @kind tag]{@link https://jsdoc.app/tags-kind.html}
