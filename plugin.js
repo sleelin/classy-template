@@ -115,11 +115,16 @@ exports.handlers = {
     }
 };
 
-/* ************************************************************* *
- *  For a package whose purpose is documentation of code,        *
- *  JSDoc 3.x is disappointingly lacking in code documentation.  *
- *  As a workaround, the following attempts to fix that...       *
- * ************************************************************* */
+/* ************************************************************************ *
+ *  For a package whose purpose is documentation of code,                   *
+ *  JSDoc 3.x and 4.x is disappointingly lacking in code documentation.     *
+ *  As a workaround, the following attempts to fix that...                  *
+ * ************************************************************************ */
+
+/**
+ * JSDoc's drop-in replacement of (some) of TAFFYDB's functionality
+ * @external Salty
+ */
 
 /**
  * Package data, parsed and collated from package.json

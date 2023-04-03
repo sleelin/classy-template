@@ -93,7 +93,7 @@ class PublishUtils {
      * Instantiate the JSDoc Template and make useful details available when rendering
      * @param {String} templatePath - path to the directory containing the template files
      * @param {TemplateConfig} templateConfig - template configuration, parsed and collated from JSDoc environment
-     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {Salty} data - constructed and filtered dataset of JSDoc doclets
      * @param {PackageData} packageData - details about the package and template configuration
      * @param {SourceFilesData} sourceFiles - details about how source files are being handled
      * @returns {BootstrappedTemplate} an instance of a JSDoc Template, with useful details and methods added
@@ -293,7 +293,7 @@ class PublishUtils {
     /**
      * Generate the HTML for the main navigation menu of a page
      * @param {BootstrappedTemplate} template - JSDoc Template to assign the generated HTML to
-     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {Salty} data - constructed and filtered dataset of JSDoc doclets
      * @param {Tutorial[]} tutorials - tutorials to include in the main navigation menu of a page
      * @param {String} [apiEntry] - class or namespace to treat as the entrypoint when generating structured navigation for a page
      */
@@ -331,7 +331,7 @@ class PublishUtils {
     
     /**
      * Generate the HTML for the structured API section of the main navigation menu of a page
-     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {Salty} data - constructed and filtered dataset of JSDoc doclets
      * @param {ClassyDoclet[]} items - collection of items to generate structured navigation menu entries for
      * @param {Object.<string, boolean>} seen - object keeping track of whether a given item has already had a menu entry generated
      * @param {Number} depth - how deep the current set of menu entries are nested in the overall menu structure
@@ -805,7 +805,7 @@ class DocletPage {
     /**
      * Restructure the given set of doclets by updating their membership and scope details
      * @param {ClassyDoclet[]} doclets - set of doclets to be restructured
-     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {Salty} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
      */
     static restructure(doclets, data) {
         for (let doclet of doclets) {
@@ -865,7 +865,7 @@ class DocletPage {
     /**
      * Establish inheritance and child details for a given set of doclets
      * @param {Doclet[]} doclets - set of doclets for which children and inheritance is to be established for
-     * @param {TAFFY} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
+     * @param {Salty} data - constructed and filtered dataset of JSDoc doclets
      */
     static inherit(doclets, data) {
         for (let doclet of doclets) {
@@ -879,7 +879,7 @@ class DocletPage {
                 if (!isContainer) {
                     // See if we can find the containing parent
                     const {filename, path} = doclet.meta;
-                    const parent = data({meta: {filename, path}}, [{name: doclet.memberof}, {longname: doclet.memberof}]).first();
+                    const [parent] = data({meta: {filename, path}}, [{name: doclet.memberof}, {longname: doclet.memberof}]).get();
                     // Then get details about where the doclet inherits from its parent
                     const {augments: augs = [], implements: imps = [], overrides: ovrs = []} = parent ?? {};
                     const ancestors = [["augments", augs], ["implements", imps], ["overrides", ovrs]];
@@ -909,10 +909,10 @@ class DocletPage {
                     // Only inherit from the first name in the list
                     const longname = inheritance.values().next().value;
                     // See if we can find a symbol to inherit from
-                    const inheritable = data(...[
+                    const [inheritable] = data(...[
                         {longname, kind, ...(!!scope && !isContainer ? {scope} : {})},
                         (isContainer ? [] : [[{name}, {alias: name}]])
-                    ].flat()).first();
+                    ].flat()).get();
                     
                     // If so, apply inheritance to inheritable tags
                     if (!!inheritable) {
@@ -1035,13 +1035,14 @@ class DocletPage {
 }
 
 /**
- * @param {TAFFY} data - See <http://taffydb.com/>.
- * @param {Object} opts
- * @param {Tutorial} tutorials
+ * Prepare and generate documentation pages! 
+ * @param {Salty} data - set of doclets detected by JSDoc
+ * @param {Object} opts - options supplied to JSDoc
+ * @param {Tutorial} tutorials - list of associated tutorials
  */
 exports.publish = (data, opts, tutorials) => {
     // Get package data, template path and overall config
-    const packageData = data({kind: "package"}).first() ?? {};
+    const [packageData = {}] = data({kind: "package"}).get();
     const {templatePath, templateConfig, sourceFiles} = PublishUtils.getPublishConfig(path.normalize(opts.template), opts.package, packageData.repository);
     
     // Claim some special filenames in advance, so the All-Powerful Overseer of Filename Uniqueness
@@ -1084,7 +1085,7 @@ exports.publish = (data, opts, tutorials) => {
     // Find the API entry doclet (if specified) and move it to the index
     if (!!templateConfig.classy.apiEntry) {
         // Find the doclet and remove it from pages - it no longer gets its own page
-        const entry = data({kind: DocletPage.containers, longname: templateConfig.classy.apiEntry}).first();
+        const [entry] = data({kind: DocletPage.containers, longname: templateConfig.classy.apiEntry}).get();
         const index = pages.indexOf(new DocletPage(entry));
         const page = (index >= 0 ? pages.splice(index, 1).pop() : false);
         
