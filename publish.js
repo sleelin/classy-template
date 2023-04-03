@@ -8,7 +8,6 @@ const JSDocPath = require("jsdoc/path");
 const JSDocTemplate = require("jsdoc/template").Template;
 const JSDocFilter = require("jsdoc/src/filter").Filter;
 const JSDocScanner = require("jsdoc/src/scanner").Scanner;
-const JSDocSyntax = require("jsdoc/src/syntax").Syntax;
 const {JSDOM} = require("jsdom");
 const outdir = path.normalize(env.opts.destination);
 
@@ -803,43 +802,6 @@ class DocletPage {
     }
     
     /**
-     * Restructure the given set of doclets by updating their membership and scope details
-     * @param {ClassyDoclet[]} doclets - set of doclets to be restructured
-     * @param {Salty} data - constructed and filtered dataset of JSDoc doclets - see <http://taffydb.com/>
-     */
-    static restructure(doclets, data) {
-        for (let doclet of doclets) {
-            // Go through all containers that get their own page
-            if (doclet.meta && DocletPage.containers.includes(doclet.kind)) {
-                let {filename, path, lineno} = doclet.meta,
-                    // Get all container symbols in the same file as the doclet
-                    next = data({meta: {filename, path}, kind: DocletPage.containers}).get()
-                        // Work out the next container symbol in the same file (if any)
-                        .filter(d => d?.meta?.lineno > lineno).sort((a, b) => a.meta.lineno - b.meta.lineno).shift(),
-                    // Get all non-container symbols in the file
-                    children = data({meta: {filename, path}}, {kind: {"!is": DocletPage.containers}}).get()
-                        // And find ones that lie between this container and the next container
-                        .filter(c => (c?.meta?.lineno > lineno) && (!next || c?.meta?.lineno < next?.meta?.lineno));
-                
-                // Fix the symbol's scope, membership, and long name!
-                for (let child of children) {
-                    // Only change the scope for method definitions and class properties...
-                    if ([JSDocSyntax.MethodDefinition, JSDocSyntax.ClassProperty].includes(child?.meta?.code?.type)) {
-                        child.setScope(child?.meta?.code?.node?.static ? "static" : "instance");
-                    }
-                    
-                    // ...but always update membership and long name
-                    child.setMemberof(doclet.longname);
-                    child.setLongname(`${doclet.longname}${helper.scopeToPunc[child.scope]}${child.name}`);
-                }
-                
-                // Go deeper with page containing symbols
-                DocletPage.restructure(data({memberof: doclet.longname, kind: DocletPage.containers}).get(), data);
-            }
-        }
-    }
-    
-    /**
      * Declare links to JSDoc for the given set of doclets
      * @param {Doclet[]} doclets - set of doclets to be declared to JSDoc's linking mechanism
      * @param {String} [apiEntry] - class or namespace whose doclet should be treated as the index page
@@ -1062,7 +1024,6 @@ exports.publish = (data, opts, tutorials) => {
     PublishUtils.handleStatics(templatePath, templateConfig?.default?.staticFiles, {logo: templateConfig.classy.logo, gitImage: sourceFiles.image});
     
     // Prepare all doclets for consumption
-    DocletPage.restructure(data({scope: "global", kind: DocletPage.containers}).get(), data);
     DocletPage.declare(data().get(), templateConfig.classy.apiEntry, indexUrl);
     DocletPage.inherit(data().get(), data);
     DocletPage.sign(data().get(), data);
