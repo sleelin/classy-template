@@ -37,7 +37,7 @@ export default class Shape {
  * Other Interface
  * @interface Geometry.Interfaces.Other
  * @summary
- * * Describes an "other" thing
+ * * Describes a second interface documented in the same file as some other symbol
  * * A JSDoc doclet that should be treated as an "interface"
  * @description
  * Lorem ipsum omnesque himenaeos vix mei periculis appareat.   

@@ -43,17 +43,13 @@
     <?js= this.partial("partials/section.tmpl", {title: "Namespaces", id: "namespaces", items: obj?.doclets?.namespace}) ?>
     
     <?js= this.partial("partials/section.tmpl", {title: "Members", id: "members", items: obj?.doclets?.member, 
-        forEach: (item) => this.partial("partials/members.tmpl", item)}) ?>
-    
+        forEach: (item) => this.partial("partials/article.tmpl", item)}) ?>
     <?js= this.partial("partials/section.tmpl", {title: "Methods", id: "methods", items: obj?.doclets?.function,
-        forEach: (item) => this.partial("partials/method.tmpl", item)}) ?>
-    
+        forEach: (item) => this.partial("partials/article.tmpl", item)}) ?>
     <?js= this.partial("partials/section.tmpl", {title: "Type Definitions", id: "typedefs", items: obj?.doclets?.typedef, 
-        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)}) ?>
-    
+        forEach: (item) => this.partial("partials/article.tmpl", item)}) ?>
     <?js= this.partial("partials/section.tmpl", {title: "Events", id: "events", items: obj?.doclets?.event, 
-        forEach: (item) => this.partial("partials/method.tmpl", item)}) ?>
-    
+        forEach: (item) => this.partial("partials/article.tmpl", item)}) ?>
     <?js= this.partial("partials/section.tmpl", {title: "Constants", id: "constants", items: obj?.doclets?.constant, 
-        forEach: (item) => this.partial(`partials/${item.signature ? "method" : "members"}.tmpl`, item)}) ?>
+        forEach: (item) => this.partial("partials/article.tmpl", item)}) ?>
 </article>

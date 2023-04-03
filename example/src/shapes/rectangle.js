@@ -19,7 +19,7 @@ export default class Rectangle extends Shape {
      */
     constructor(width, height, origin = new Point(0, 0)) {
         super();
-    
+        
         const topLeft = new Point(origin.x, origin.y);
         const topRight = new Point(origin.x + width, origin.y);
         const bottomLeft = new Point(origin.x, origin.y + height);
