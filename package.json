@@ -28,7 +28,7 @@
     "publish.js"
   ],
   "dependencies": {
-    "jsdom": "^18.0.0"
+    "jsdom": "^22.0.0"
   },
   "devDependencies": {
     "jsdoc": "^4.0.2"
