@@ -426,7 +426,7 @@ class PublishUtils {
             // If top level title, add it to the list
             if (h.level <= (minLevel === 1 ? 2 : minLevel)) {
                 if (!titles.includes(h)) titles.push(h);
-            } 
+            }
             // Otherwise, try find a parent for it
             else {
                 // Always start by assuming last title, if any, as parent
@@ -435,14 +435,13 @@ class PublishUtils {
                 
                 // Find the closest parent at specified depth
                 while (parent?.children?.length && level < h.level) {
+                    level += 1;
                     parent = parent.children[parent.children.length - 1];
                 }
                 
                 // Add the child
                 parent?.children?.push(h);
             }
-            
-            delete h.level;
             
             return titles;
         }, []);
