@@ -100,6 +100,12 @@ exports.handlers = {
         // Class properties with default values shouldn't need to explicitly declare themselves
         if (type === Syntax.ClassProperty && !!value) e.code.value = nodeToValue(value);
     },
+    jsdocCommentFound: (e) => {
+        // Remove all "typeof" instances in comments, since JSDoc doesn't know what to do with them yet
+        while (e.comment.match(/\{(.*?)typeof\s+(.*?)}/g)) {
+            e.comment = String(e.comment ?? "").replaceAll(/\{(.*?)typeof\s+(.*?)}/g, "{$1$2}")
+        }
+    },
     parseComplete(e) {
         // Go through source files to get classdesc from class or interface constructors
         for (let sourcefile of e.sourcefiles) {
