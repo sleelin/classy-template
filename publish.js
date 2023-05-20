@@ -841,7 +841,9 @@ class DocletPage {
                 if (!isContainer) {
                     // See if we can find the containing parent
                     const {filename, path} = doclet.meta;
-                    const [parent] = data({meta: {filename, path}}, [{name: doclet.memberof}, {longname: doclet.memberof}]).get();
+                    const [parent] = data().get().filter(({name, longname, meta: {filename: fn, path: p} = {}}) => 
+                        // Need to use native array filter since Salty doesn't support comparing deeply nested properties
+                        ((fn === filename && p === path) && (name === doclet.memberof || longname === doclet.memberof)));
                     // Then get details about where the doclet inherits from its parent
                     const {augments: augs = [], implements: imps = [], overrides: ovrs = []} = parent ?? {};
                     const ancestors = [["augments", augs], ["implements", imps], ["overrides", ovrs]];
@@ -871,10 +873,11 @@ class DocletPage {
                     // Only inherit from the first name in the list
                     const longname = inheritance.values().next().value;
                     // See if we can find a symbol to inherit from
-                    const [inheritable] = data(...[
-                        {longname, kind, ...(!!scope && !isContainer ? {scope} : {})},
-                        (isContainer ? [] : [[{name}, {alias: name}]])
-                    ].flat()).get();
+                    const query = {longname, kind, ...(!!scope && !isContainer ? {scope} : {})};
+                    const [inheritable] = (isContainer ? data(query).get() : [
+                        // Need to use multiple queries as Salty doesn't support branching logic from TaffyDB
+                        ...data({...query, name}).get(), ...data({...query, alias: name}).get()
+                    ]);
                     
                     // If so, apply inheritance to inheritable tags
                     if (!!inheritable) {
