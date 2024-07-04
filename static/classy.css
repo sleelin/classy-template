@@ -178,6 +178,12 @@ a:hover {
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
 }
 
+td.type .param {
+    display: inline-flex;
+    flex-wrap: wrap;
+    width: min-content;
+}
+
 /* Returns Styling */
 .returns dt {
     float: left;
@@ -806,6 +812,7 @@ code, .hljs {
     color: var(--colour-text-main);
     font-family: Consolas, Monaco, 'Andale Mono', monospace;
     font-size: 100%;
+    white-space: nowrap;
 }
 
 .params td.description > p:first-child,
@@ -936,7 +943,7 @@ code, .hljs {
     }
     
     /* Wrap param types in tables */
-    td.type .param-type {
+    td.type .param, td.type .param-type {
         display: block;
     }
     

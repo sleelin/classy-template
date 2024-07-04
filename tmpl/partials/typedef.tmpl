@@ -31,11 +31,18 @@
     obj.hasDefault = false;
     obj.hasName = false;
 
-    obj.items.forEach((item) => {
+    obj.items.forEach((item, index, items) => {
         if (!item) return;
         if (item.optional || item.nullable || item.variable) obj.hasAttributes = true;
         if (item.name) obj.hasName = true;
         if (typeof item.defaultvalue !== "undefined" && !obj.isEnum) obj.hasDefault = true;
+        
+        // See how many of the following items are for the same property
+        for (var i = 1, finished = false; !finished; ++i)
+            finished = !(items[index + i] && items[index + i].name === item.name);
+        
+        // Set the span of the "name" column
+        item.nameRowspan = (items[index-1] && items[index-1].name === item.name ? 0 : i-1);
     });
 ?>
 
@@ -54,15 +61,19 @@
         if (!item) return;
     ?>
         <tr>
-            <?js if (obj.hasName) { ?>
-                <td class="name">
+            <?js if (obj.hasName && !!item.nameRowspan) { ?>
+                <td class="name"<?js= item.nameRowspan > 1 ? ` rowspan="${item.nameRowspan}"` : "" ?>>
                     <code>
                         <?js= (item?.variable ? `&hellip;${item.name}` : item.name) ?><span class="signature-attributes"><?js= [...(item.optional ? ["opt"] : []), ...(item.nullable ? ["nullable"] : [])].join(", ") ?></span>
                     </code>
                 </td>
             <?js } ?>
 
-            <td class="type"><?js= (item?.type?.names ? this.partial("tags/type.tmpl", item.type.names) : "") ?></td>
+            <td class="type">
+                <span class="param">
+                    <?js= (item?.type?.names ? this.partial("tags/type.tmpl", item.type.names) : "") ?>
+                </span>
+            </td>
 
             <?js if (obj.hasDefault) { ?>
                 <td class="default"><?js= (typeof item.defaultvalue !== "undefined") ? this.htmlsafe(item.defaultvalue) : "" ?></td>
