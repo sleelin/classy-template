@@ -1,3 +1,5 @@
+<img alt="Classy!" src="https://raw.githubusercontent.com/sleelin/classy-template/e5614dd52986e1b6187c6d36693564a6c8f1da8d/assets/logo.svg" width="512" />
+
 **Classy!** A reimplementation of the default JSDoc template, adding context-aware inferred ES6 class syntax doclet tags like static, alias, memberOf, and constructs for nested API classes.
 
 > Visit the <a href="https://sleelin.github.io/classy-template/" target="_blank">Example Documentation</a> to see how it looks!
