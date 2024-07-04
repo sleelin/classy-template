@@ -18,7 +18,7 @@
     "url": "https://github.com/sleelin/classy-template/issues"
   },
   "scripts": {
-    "example": "./node_modules/.bin/jsdoc -c ./jsdoc.json"
+    "example": "jsdoc -c ./jsdoc.json"
   },
   "files": [
     "assets/**",
