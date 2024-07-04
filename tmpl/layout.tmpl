@@ -11,13 +11,14 @@
     <script src="static/highlight/langs/json.min.js"></script>
     <link type="text/css" rel="stylesheet" href="static/highlight/highlight.min.css">
     <link type="text/css" rel="stylesheet" href="static/classy.css">
+    <?js if (this.templateConfig.classy?.icon) { ?><link rel="icon" type="image/svg+xml" href="static/assets/icon.<?js= this.templateConfig.classy?.icon?.split?.(".")?.pop?.() ?? "png" ?>" /><?js } ?>
 </head>
 
 <body>
     <header class="page-header">
         <h1 class="package-details">
             <a class="package-name" href="./">
-                <?js if (this.templateConfig.classy?.logo) { ?><img alt="<?js= this.templateConfig.classy?.name ?>" src="static/assets/logo.<?js= this.templateConfig.classy?.logo?.split?.(".")?.pop?.() ?? "png" ?>" /><?js } ?>
+                <?js if (this.templateConfig.classy?.showLogo && this.templateConfig.classy?.logo) { ?><img alt="<?js= this.templateConfig.classy?.name ?>" src="static/assets/logo.<?js= this.templateConfig.classy?.logo?.split?.(".")?.pop?.() ?? "png" ?>" /><?js } ?>
                 <?js if (this.templateConfig.classy?.showName || !this.templateConfig.classy?.logo) { ?><span><?js= this.templateConfig.classy.name ?></span><?js } ?>
             </a>
             <?js if (!!this.packageData?.version && this.templateConfig.classy?.showVersion) { ?>

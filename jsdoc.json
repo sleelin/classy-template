@@ -23,7 +23,9 @@
     },
     "classy": {
       "name": "Example Docs",
+      "logo": "./assets/logo.svg",
       "showName": true,
+      "showLogo": false,
       "apiEntry": "Geometry"
     }
   }

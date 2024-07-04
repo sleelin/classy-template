@@ -58,9 +58,11 @@ class PublishUtils {
              * Configuration options for classy template
              * @typedef {Object} ClassyTemplateConfig
              * @property {String} name - main page name
+             * @property {String} icon - path to the icon, if a path was specified
              * @property {String} logo - path to the logo, if a path was specified
              * @property {String} apiEntry - name of doclet to treat as entrypoint of API, if specified
              * @property {Boolean} showName - whether to show the package name in the page header
+             * @property {Boolean} showLogo - whether to show the package logo in the page header
              * @property {Boolean} showVersion - whether to show the package version in the page header
              * @property {Boolean} showGitLink - whether to show a link to the git repository in the page header
              */
@@ -68,6 +70,7 @@ class PublishUtils {
                 ...classyConfig,
                 name: classyConfig.name ?? "Home",
                 showName: classyConfig.showName ?? true,
+                showLogo: classyConfig.showLogo ?? !!classyConfig.logo,
                 showVersion: classyConfig.showVersion ?? true,
                 showGitLink: classyConfig.showGitLink ?? true
             }
@@ -157,6 +160,7 @@ class PublishUtils {
      * @param {String[]} [defaultStatics.paths=[]] - list of paths to static files to be copied
      * @param {String[]} [defaultStatics.include=[]] - list of path filters to static files to be copied
      * @param {Object} [classyStatics] - static files specified by classy template config for inclusion in output
+     * @param {String} [classyStatics.icon] - path to the icon file to be copied to output destination
      * @param {String} [classyStatics.logo] - path to the logo file to be copied to output destination
      * @param {String} [classyStatics.gitImage] - path to the git image file to be copied to output destination
      */
@@ -184,19 +188,28 @@ class PublishUtils {
         
         // Add any logo or git image to list of static files
         if (classyStatics?.constructor === Object) {
-            const {logo, gitImage} = classyStatics;
+            const {icon, logo, gitImage} = classyStatics;
             
-            if (typeof logo === "string") {
-                // Add the logo file to the list, if specified
+            // Add the icon file to the list, if specified
+            if (typeof icon === "string") {
                 staticFiles.push({
-                    sourcePath: path.resolve(env.pwd, logo),
-                    fileName: path.join("assets", `logo${path.extname(logo)}`),
+                    sourcePath: path.resolve(env.pwd, icon.replace(/#.*$/, "")),
+                    fileName: path.join("assets", `icon${path.extname(icon.replace(/#.*$/, ""))}`),
+                    fromDir: JSDocFS.toDir(path.dirname(path.resolve(env.pwd, icon)))
+                });
+            }
+            
+            // Add the logo file to the list, if specified
+            if (typeof logo === "string") {
+                staticFiles.push({
+                    sourcePath: path.resolve(env.pwd, logo.replace(/#.*$/, "")),
+                    fileName: path.join("assets", `logo${path.extname(logo.replace(/#.*$/, ""))}`),
                     fromDir: JSDocFS.toDir(path.dirname(path.resolve(env.pwd, logo)))
                 });
             }
             
+            // Add the git image file to the list, if specified
             if (typeof gitImage === "string") {
-                // Add the git image file to the list, if specified
                 staticFiles.push({
                     sourcePath: path.join(templatePath, "assets", gitImage),
                     fileName: path.join("assets", gitImage),
@@ -592,7 +605,14 @@ class PublishUtils {
             const [host, repo = host] = repository.split(":");
             
             // Get the host's path details as above
-            return PublishUtils.#gitHosts[host === repo ? "github" : host](repo, commitish);
+            switch (host) {
+                case repo:
+                    return PublishUtils.#gitHosts.github(repo, commitish);
+                case "github":
+                case "bitbucket":
+                case "gitlab":
+                    return PublishUtils.#gitHosts[host](repo, commitish);
+            }
         } else if (repository?.type === "git" && !!repository?.url) {
             // Extract git host and repository details from full link
             const target = new URL(repository.url.replace(/^(?:git\+)?(.*?)(?:\.git)?$/, "$1"));
@@ -802,7 +822,7 @@ class DocletPage {
     
     /**
      * Declare links to JSDoc for the given set of doclets
-     * @param {Doclet[]} doclets - set of doclets to be declared to JSDoc's linking mechanism
+     * @param {JSDocDoclet[]} doclets - set of doclets to be declared to JSDoc's linking mechanism
      * @param {String} [apiEntry] - class or namespace whose doclet should be treated as the index page
      * @param {String} [indexUrl] - path to register as the index page
      */
@@ -917,7 +937,8 @@ class DocletPage {
                 const attribs = PublishUtils.attribsString([...new Set(source.map(item => helper.getAttribs(item)).flat())]);
                 const returns = source.map(s => PublishUtils.typeStrings(s)).join("|");
                 // Prepare params signature
-                const args = params.filter(({name}) => name && !name.includes("."))
+                const args = params.filter(({name}, index) => (name && !name.includes(".")
+                    && index === params.indexOf([...params].reverse().find(({name: n}) => name === n))))
                     .map(({name: itemName, variable, optional, nullable}) => {
                         const name = (variable ? `&hellip;${itemName}` : itemName);
                         const attributes = [...(optional ? ["opt"] : []),
@@ -1023,7 +1044,7 @@ exports.publish = (data, opts, tutorials) => {
     
     // Set up templating and handle static files
     const template = DocletPage.template = PublishUtils.bootstrapTemplate(templatePath, templateConfig, data, packageData, sourceFiles);
-    PublishUtils.handleStatics(templatePath, templateConfig?.default?.staticFiles, {logo: templateConfig.classy.logo, gitImage: sourceFiles.image});
+    PublishUtils.handleStatics(templatePath, templateConfig?.default?.staticFiles, {icon: templateConfig.classy.icon, logo: templateConfig.classy.logo, gitImage: sourceFiles.image});
     
     // Prepare all doclets for consumption
     DocletPage.declare(data().get(), templateConfig.classy.apiEntry, indexUrl);
