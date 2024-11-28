@@ -60,7 +60,9 @@
 }
 
 html {
-    overflow: auto;
+    width: 100vw;
+    /*height: 100vh;*/
+    overflow-x: hidden;
     font-size: 0.875rem;
 }
 
@@ -72,7 +74,6 @@ body {
     margin: 60px 0 0;
     display: grid;
     grid-template-columns: max-content 1fr;
-    grid-template-rows: calc(100vh - 60px - env(safe-area-inset-top, 20px));
 }
 
 /********************************/
@@ -205,6 +206,10 @@ header {
     display: block;
 }
 
+[id] {
+    scroll-margin-top: 60px;
+}
+
 .page-header {
     z-index: 100;
     position: fixed;
@@ -301,9 +306,8 @@ header {
 /********************************/
 main {
     height: 100%;
-    overflow: scroll;
     display: grid;
-    grid-template-columns: calc(100vw - var(--gutter-width-left) - var(--gutter-width-right)) min-content;
+    grid-template-columns: calc(100% - var(--gutter-width-right)) var(--gutter-width-right);
     grid-template-rows: max-content 1fr;
 }
 
@@ -317,6 +321,7 @@ main > .content-container {
     background: var(--colour-bg-content);
     justify-self: end;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 main > .content-aside {
@@ -325,7 +330,7 @@ main > .content-aside {
 }
 
 main > .content-aside .content-nav {
-    height: calc(100vh - 61px - 15px);
+    height: 100%;
     margin: 0;
 }
 
@@ -445,7 +450,6 @@ nav {
     display: block;
     box-sizing: border-box;
     margin-top: 15px;
-    overflow: scroll;
 }
 
 nav ul {
@@ -487,6 +491,11 @@ nav.page-nav {
     min-width: var(--gutter-width-left);
 }
 
+nav.page-nav .nav-content {
+    position: sticky;
+    top: 60px;
+}
+
 nav.page-nav ul {
     font-family: 'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
     font-size: 100%;
@@ -519,8 +528,9 @@ nav.page-nav ul ul a:not(.active):active {
 /********************************/
 .toc-regular {
     position: sticky;
-    top: 0;
+    top: 60px;
     margin-top: 15px;
+    height: calc(100vh - 60px);
 }
 
 .toc-tiny {
@@ -726,7 +736,6 @@ code {
     margin: 0;
     font-size: 85%;
     border-radius: 6px;
-    overflow: scroll;
 }
 
 code, .hljs {
@@ -993,8 +1002,8 @@ code, .hljs {
     }
     
     /* Enable wide content scrolling */
-    .params .subsection-content, .props dd {
-        overflow: scroll;
+    .params .subsection-content, .props .subsection-content {
+        overflow-x: scroll;
         position: relative;
         z-index: 1;
         box-sizing: border-box;
@@ -1003,13 +1012,13 @@ code, .hljs {
     }
     
     .params .subsection-content table,
-    .props table {
+    .props .subsection-content table {
         position: relative;
     }
     
     /* Enable left scroll gutter */
     .params .subsection-content:before,
-    .props dd:before {
+    .props .subsection-content:before {
         position: sticky;
         content: "";
         display: flex;
@@ -1020,7 +1029,7 @@ code, .hljs {
     }
     
     .params .subsection-content table:before,
-    .props table:before {
+    .props .subsection-content table:before {
         position: absolute;
         content: "";
         display: block;
@@ -1032,13 +1041,13 @@ code, .hljs {
     }
     
     .params .subsection-content table tr :first-child,
-    .props table tr :first-child {
+    .props .subsection-content table tr :first-child {
         border-left-width: 0;
     }
     
     /* Enable right scroll gutter */
     .params .subsection-content:after,
-    .props dd:after {
+    .props .subsection-content:after {
         position: sticky;
         content: "";
         display: flex;
@@ -1049,7 +1058,7 @@ code, .hljs {
     }
     
     .params .subsection-content table:after,
-    .props table:after {
+    .props .subsection-content table:after {
         position: absolute;
         content: "";
         display: block;
@@ -1061,7 +1070,7 @@ code, .hljs {
     }
     
     .params .subsection-content table tr :last-child,
-    .props table tr :last-child {
+    .props .subsection-content table tr :last-child {
         border-right-width: 0;
     }
     
@@ -1097,7 +1106,6 @@ code, .hljs {
         transform: translateX(0);
         transition: transform 0.3s ease-in-out;
         z-index: 999999;
-        overflow: scroll;
         font-size: 1.3em;
         padding: 10px 25px 0 15px;
         box-sizing: border-box;
