@@ -1,6 +1,6 @@
 {
   "name": "classy-template",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Improvements on the default JSDoc 3.6 template for modern ESM-style source code.",
   "author": "sleelin",
   "license": "MIT",
@@ -29,6 +29,9 @@
   ],
   "dependencies": {
     "jsdom": "^22.0.0"
+  },
+  "peerDependencies": {
+    "jsdoc": "^4.0.2"
   },
   "devDependencies": {
     "jsdoc": "^4.0.2"
