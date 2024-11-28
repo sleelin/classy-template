@@ -5,9 +5,23 @@ const nodeToValue = require("jsdoc/src/astnode").nodeToValue;
 
 exports.defineTags = function (dictionary) {
     const tags = {
+        enum: dictionary.lookUp("enum"),
+        const: dictionary.lookUp("const"),
         description: dictionary.lookUp("description"),
         classdesc: dictionary.lookUp("classdesc")
     };
+    
+    // Treat "enum" tags as "constant" tags...
+    dictionary.defineTag("const", {
+        ...tags.const,
+        onTagged(doclet, tag) {
+            tags.const.onTagged(doclet, tag);
+            
+            // ...but still flag them as enums
+            if (tag.originalTitle === "enum")
+                tags.enum.onTagged(doclet, tag);
+        }
+    }).synonym("enum");
     
     // Set the doclet title from the first "description" found
     dictionary.defineTag("description", {
@@ -28,6 +42,25 @@ exports.defineTags = function (dictionary) {
             }
         }
     });
+    
+    dictionary.defineTag("overrides", {
+        canHaveType: true,
+        mustNotHaveDescription: true,
+        onTagged(doclet, {value}) {
+            doclet.overrides = doclet.overrides ?? [];
+            doclet.overrides.push(...value?.type?.names);
+        }
+    })
+    
+    // Define "template" tags for handling type parameters
+    dictionary.defineTag("template", {
+        canHaveName: true,
+        canHaveType: true,
+        mustHaveValue: true,
+        onTagged(doclet, {value}) {
+            doclet.templates = (doclet.templates ?? new Map()).set(value.name, value);
+        }
+    })
 };
 
 /**
@@ -47,10 +80,20 @@ const Filters = {
      */
     hasComment: (d) => (!!d.comment),
     /**
+     * Checks whether the given doclet is marked as undocumented
+     * @type {FilterMethod}
+     */
+    isUndocumented: (d) => (d.undocumented),
+    /**
      * Checks whether the given doclet is marked as documented
      * @type {FilterMethod}
      */
     isDocumented: (d) => (!d.undocumented),
+    /**
+     * Checks whether the given doclet is for a constant symbol
+     * @type {FilterMethod}
+     */
+    isConstant: (d) => (d.kind === "constant"),
     /**
      * Checks whether the given doclet is documented and for a class symbol
      * @type {FilterMethod}
@@ -65,7 +108,7 @@ const Filters = {
      * Checks whether the given doclet is documented and for a class-like symbol
      * @type {FilterMethod}
      */
-    isClassLike: (d) => (Filters.isDocumented(d) && ["namespace", "class", "interface"].includes(d.kind)),
+    isClassLike: (d) => (Filters.isDocumented(d) && ["module", "namespace", "class", "interface"].includes(d.kind)),
     /**
      * Checks whether the given doclet is documented and for a container symbol
      * @type {FilterMethod}
@@ -89,7 +132,7 @@ const Filters = {
      * @param {String} comment - the leading comment to search a doclet's node for
      * @returns {FilterMethod} method to determine whether a given doclet's node name or leading comment match those specified
      */
-    hasMatchingNode: (name, comment) => (({meta: {code: {node}}}) => (name === node?.id?.name || comment === `/*${node?.leadingComments?.slice?.(-1)?.pop?.()?.value ?? ""}*/`))
+    hasMatchingNode: (name, comment) => (({meta: {code: {node}}}) => (name === node?.id?.name || comment === `/*${(node?.leadingComments ?? node?.parent?.leadingComments)?.slice?.(-1)?.pop?.()?.value ?? ""}*/`))
 }
 
 exports.handlers = {
@@ -107,6 +150,8 @@ exports.handlers = {
         }
     },
     parseComplete(e) {
+        // console.log(e.doclets.filter((d) => d.longname === "SCIMMY.Types.Resource"))
+        
         // Go through source files to get classdesc from class or interface constructors
         for (let sourcefile of e.sourcefiles) {
             // Get doclets within this source file, then get doclets that are commented and sort by line number
@@ -117,6 +162,7 @@ exports.handlers = {
             for (let d of symbols) if (d?.meta?.code?.node?.kind === "constructor") d.undocumented = true;
             
             // Go through and fix various issues with tags and generally incorrect doclet details
+            fixDocletMetaCodeNodes(doclets.filter(Filters.isDocumented).filter(Filters.isConstant), symbols.filter(Filters.isUndocumented));
             fixDocletDefaultValues(symbols.filter(Filters.hasDefaultValue));
             fixDocletMetaCodeNodes(doclets.filter(Filters.isClassLike), symbols);
             fixDocletClassConstructors(doclets.filter(Filters.isClass), doclets);
@@ -174,7 +220,9 @@ function fixDocletClassConstructors(targets, doclets) {
         const {title, meta: {range}} = target;
         const [firstPos = Infinity, lastPos = -1] = range ?? [];
         const [nextFirstPos = Infinity, nextLastPos = Infinity] = targets?.[targets.indexOf(target) + 1]?.meta?.range ?? [];
-        // Get the first "undocumented" or wrongly documented doclet between start and end of class declaration
+        // Get the first "undocumented" matching doclet to source missing templates from
+        const {templates} = doclets.find(({undocumented, kind, longname}) => (undocumented && kind === target.kind && longname === target.longname)) ?? {};
+        // Get the first "undocumented" constructor doclet between start and end of class declaration
         const constructor = doclets.find(({meta: {code, range: [start, finish] = []} = {}}) =>
             (code?.node?.kind === "constructor" && start > firstPos && finish < lastPos
                 && (start < nextFirstPos || start > nextLastPos))) ?? {};
@@ -197,7 +245,8 @@ function fixDocletClassConstructors(targets, doclets) {
             ...(Filters.isInterface(target) ? {virtual: true} : {}),
             ...(classdesc ? {classdesc} : {}),
             ...(params ? {params} : {}),
-            ...(properties ? {properties} : {})
+            ...(properties ? {properties} : {}),
+            templates
         });
     }
 }
@@ -211,7 +260,7 @@ function fixDocletDescendants(targets, doclets) {
     // Go through all targets and get their missing children
     for (let target of targets) {
         // Get some positional details for finding all doclets that could be children of this container
-        const {meta: {lineno: firstLine, range, code}} = target;
+        const {meta: {lineno: firstLine, code}} = target;
         const lastLine = code?.node?.loc?.end?.line ?? 0;
         // Get all doclets that are found between this container and the next
         const children = doclets.filter(({undocumented, meta: {lineno} = {}}) =>

@@ -281,7 +281,12 @@ class PublishUtils {
      */
     static typeString(name) {
         // Turn clojure array syntax back into JSDoc array syntax!
-        return name.replace(/Array\.(?:<|&lt;)(.*)>/g, "$1[]").replace(/(.*>)(?:.*?)~(.*)/g, "$1~$2");
+        return name
+            .replace(/Promise\.(?:<|&lt;)(.*)>/g, "$1")
+            .replace(/(Map|Record|Set)\.((<|&lt;).*?)/g, "$1$2")
+            .replace(/Array\.(?:<|&lt;)(.*)>/g, "$1[]")
+            .replace(/(.*>)(?:.*?)~(.*)/g, "$1~$2")
+            .replace(/(.*?)\.((<|&lt;).*?[>].*)/g, "$1");
     }
     
     /**
@@ -853,8 +858,9 @@ class DocletPage {
             // Establish inheritance for supplied doclets, where supported
             if (!!doclet?.meta) {
                 // Establish initial inheritance chain for the doclet, as well as whether it is a container-generating doclet
-                const inheritance = new Set([...(doclet.augments ?? []), ...(doclet.implements ?? []), ...(doclet.overrides ?? [])]);
+                const inheritance = new Set([...(doclet.implements ?? []), ...[doclet.augments, doclet.implements, doclet.overrides].flatMap((i) => i ? i : []).map((v) => v.replaceAll(/(.*?)[<].*?[>]/g, "$1"))]);
                 const isContainer = DocletPage.containers.includes(doclet.kind);
+                const templateValues = new Map();
                 
                 // If it's not a container, it must have a parent
                 if (!isContainer) {
@@ -864,14 +870,24 @@ class DocletPage {
                         // Need to use native array filter since Salty doesn't support comparing deeply nested properties
                         ((fn === filename && p === path) && (name === doclet.memberof || longname === doclet.memberof)));
                     // Then get details about where the doclet inherits from its parent
-                    const {augments: augs = [], implements: imps = [], overrides: ovrs = []} = parent ?? {};
-                    const ancestors = [["augments", augs], ["implements", imps], ["overrides", ovrs]];
+                    const {augments: augs = [], implements: imps = []} = parent ?? {};
+                    const ancestors = [["augments", augs], ["implements", imps]];
                     
                     // If the parent inherits from somewhere, assume this symbol might inherit from there too
                     for (let [type, targets] of ancestors) {
                         // Go through each inheritable symbol to add to the doclet
                         for (let target of targets) {
-                            const ancestorName = `${target}${helper.scopeToPunc[doclet.scope || "instance"]}${doclet.name}`;
+                            // Strip TypeScript generic type params from inheritance targets
+                            const [fallback, longname = fallback, typeParamsString = ""] = /(.*)[<](.*)[>]|.*/g.exec(target);
+                            const ancestorName = `${longname}${helper.scopeToPunc[doclet.scope || "instance"]}${doclet.name}`;
+                            // Extract TypeScript generic type params from inheritance target
+                            const typeParams = typeParamsString.split(",").map((s) => s.trim()).filter(s => s);
+                            const [heritage] = data({longname}).get();
+                            
+                            // Store type parameter values with either specified type or fallback value
+                            for (let [key, value] of Array.from(heritage.templates?.entries() ?? [], ([key, value], index) => ([key, typeParams[index] ?? value?.defaultvalue]))) {
+                                templateValues.set(key, value);
+                            }
                             
                             // Add ancestor to inheritance chain, and to the doclet
                             if (!inheritance.has(ancestorName)) {
@@ -890,7 +906,8 @@ class DocletPage {
                     // Establish details of the symbol to inherit from
                     const {name, kind, scope} = doclet;
                     // Only inherit from the first name in the list
-                    const longname = inheritance.values().next().value;
+                    const [fallback, longname = fallback, typeParamsString = ""] = /(.*)[<](.*)[>]|.*/g.exec(inheritance.values().next().value);
+                    const typeParams = typeParamsString.split(",").map((s) => s.trim()).filter(s => s);
                     // See if we can find a symbol to inherit from
                     const query = {longname, kind, ...(!!scope && !isContainer ? {scope} : {})};
                     const [inheritable] = (isContainer ? data(query).get() : [
@@ -904,6 +921,18 @@ class DocletPage {
                             // Only if the tag isn't already defined on the doclet
                             if (!Object.keys(doclet[key] ?? "").length && !!inheritable[key]) {
                                 doclet[key] = inheritable[key];
+                            }
+                        }
+                        
+                        // Mix in additional type parameter values from the inheritable symbol
+                        for (let [key, value] of Array.from(inheritable.templates?.entries() ?? [], ([key, value], index) => ([key, typeParams[index] ?? value?.defaultvalue]))) {
+                            templateValues.set(key, value);
+                        }
+                        
+                        // Replace inherited type parameter types with actual types
+                        for (let key of ["params", "properties", "type", "returns"]) if (!!doclet[key]) {
+                            for (let value of Array.isArray(doclet[key]) ? doclet[key] : [doclet[key]]) {
+                                if (value?.type?.names) value.type.names = value.type.names.map((n) => templateValues.get(n) ?? n);
                             }
                         }
                     }
@@ -935,7 +964,8 @@ class DocletPage {
                 const source = doclet.yields || doclet.returns || [];
                 // Prepare attribs and returns signatures
                 const attribs = PublishUtils.attribsString([...new Set(source.map(item => helper.getAttribs(item)).flat())]);
-                const returns = source.map(s => PublishUtils.typeStrings(s)).join("|");
+                const returns = source.map(s => s.type?.names).flat()
+                    .map(s => PublishUtils.typeStrings({type: {names: [s]}})).join("|");
                 // Prepare params signature
                 const args = params.filter(({name}, index) => (name && !name.includes(".")
                     && index === params.indexOf([...params].reverse().find(({name: n}) => name === n))))
