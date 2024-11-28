@@ -2,7 +2,7 @@
     <div class="<?js= ["detail", ...(Array.isArray(obj.classes) ? obj.classes : (obj.classes ? [obj.classes] : [])), ...(obj?.tag ? [`tag-${obj?.tag}`] : [])].join(" ") ?>">
         <dt><?js= obj.title ?></dt>
         <?js (Array.isArray(obj.items) ? obj.items : [obj.items]).forEach((item) => { ?>
-            <dd><?js= obj.linktoFn ? obj.linktoFn(item) : this.linkto(item, this.htmlsafe(item)) ?></dd>
+            <dd><?js= obj.linktoFn ? obj.linktoFn(item) : this.typeString(this.linkto(item, this.htmlsafe(item))) ?></dd>
         <?js }); ?>
     </div>
 <?js } ?>
