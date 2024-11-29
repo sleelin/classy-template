@@ -860,7 +860,7 @@ class DocletPage {
                 // Establish initial inheritance chain for the doclet, as well as whether it is a container-generating doclet
                 const inheritance = new Set([...(doclet.implements ?? []), ...[doclet.augments, doclet.implements, doclet.overrides].flatMap((i) => i ? i : []).map((v) => v.replaceAll(/(.*?)[<].*?[>]/g, "$1"))]);
                 const isContainer = DocletPage.containers.includes(doclet.kind);
-                const templateValues = new Map();
+                const templateValues = new Map(Array.from(doclet?.templates?.entries() ?? [], ([key, value]) => ([key, value?.type?.names?.join("|") || value.defaultvalue || key])));
                 
                 // If it's not a container, it must have a parent
                 if (!isContainer) {
@@ -870,8 +870,13 @@ class DocletPage {
                         // Need to use native array filter since Salty doesn't support comparing deeply nested properties
                         ((fn === filename && p === path) && (name === doclet.memberof || longname === doclet.memberof)));
                     // Then get details about where the doclet inherits from its parent
-                    const {augments: augs = [], implements: imps = []} = parent ?? {};
+                    const {augments: augs = [], implements: imps = [], templates} = parent ?? {};
                     const ancestors = [["augments", augs], ["implements", imps]];
+                    
+                    // Store type parameter values from parent with either specified type or fallback value
+                    for (let [key, value] of Array.from(templates?.entries() ?? [], ([key, value]) => ([key, value?.type?.names?.join("|") || key]))) {
+                        templateValues.set(key, value);
+                    }
                     
                     // If the parent inherits from somewhere, assume this symbol might inherit from there too
                     for (let [type, targets] of ancestors) {
@@ -902,7 +907,7 @@ class DocletPage {
                 }
                 
                 // Apply inheritance if necessary!
-                if (inheritance.size > 0) {
+                if (inheritance.size > 0 && !doclet.exceptions) {
                     // Establish details of the symbol to inherit from
                     const {name, kind, scope} = doclet;
                     // Only inherit from the first name in the list
@@ -920,7 +925,7 @@ class DocletPage {
                         for (let key of ["description", "examples", "see", "params", "properties", "type", "returns"]) {
                             // Only if the tag isn't already defined on the doclet
                             if (!Object.keys(doclet[key] ?? "").length && !!inheritable[key]) {
-                                doclet[key] = inheritable[key];
+                                doclet[key] = JSON.parse(JSON.stringify(inheritable[key]));
                             }
                         }
                         
@@ -928,13 +933,13 @@ class DocletPage {
                         for (let [key, value] of Array.from(inheritable.templates?.entries() ?? [], ([key, value], index) => ([key, typeParams[index] ?? value?.defaultvalue]))) {
                             templateValues.set(key, value);
                         }
-                        
-                        // Replace inherited type parameter types with actual types
-                        for (let key of ["params", "properties", "type", "returns"]) if (!!doclet[key]) {
-                            for (let value of Array.isArray(doclet[key]) ? doclet[key] : [doclet[key]]) {
-                                if (value?.type?.names) value.type.names = value.type.names.map((n) => templateValues.get(n) ?? n);
-                            }
-                        }
+                    }
+                }
+                
+                // Replace inherited type parameter types with actual types
+                for (let key of ["params", "properties", "type", "returns"]) if (!!doclet[key]) {
+                    for (let value of Array.isArray(doclet[key]) ? doclet[key] : [doclet[key]]) {
+                        if (value?.type?.names) value.type.names = value.type.names.map((n) => templateValues.get(n) ?? n);
                     }
                 }
             }
@@ -964,6 +969,7 @@ class DocletPage {
                 const source = doclet.yields || doclet.returns || [];
                 // Prepare attribs and returns signatures
                 const attribs = PublishUtils.attribsString([...new Set(source.map(item => helper.getAttribs(item)).flat())]);
+                const throws = doclet.exceptions?.map(e => PublishUtils.typeStrings(e));
                 const returns = source.map(s => s.type?.names).flat()
                     .map(s => PublishUtils.typeStrings({type: {names: [s]}})).join("|");
                 // Prepare params signature
@@ -982,7 +988,7 @@ class DocletPage {
                 
                 // Add params to the signature, then add attribs and returns to the signature
                 doclet.signature = `<span class="signature">${signature}(${args})</span>`;
-                doclet.signature += `<span class="type-signature returns">${returns.length ? ` &rarr; ${attribs}{${returns}}` : ""}</span>`;
+                doclet.signature += `<span class="type-signature returns">${throws?.length ? ` &raquo; ${throws}` : returns.length ? ` &rarr; ${attribs}{${returns}}` : ""}</span>`;
             } else if (needsTypes) {
                 const types = PublishUtils.typeStrings(doclet);
                 

@@ -43,6 +43,7 @@ exports.defineTags = function (dictionary) {
         }
     });
     
+    // Add explicit "overrides" tag
     dictionary.defineTag("overrides", {
         canHaveType: true,
         mustNotHaveDescription: true,
@@ -50,7 +51,7 @@ exports.defineTags = function (dictionary) {
             doclet.overrides = doclet.overrides ?? [];
             doclet.overrides.push(...value?.type?.names);
         }
-    })
+    });
     
     // Define "template" tags for handling type parameters
     dictionary.defineTag("template", {
@@ -60,7 +61,7 @@ exports.defineTags = function (dictionary) {
         onTagged(doclet, {value}) {
             doclet.templates = (doclet.templates ?? new Map()).set(value.name, value);
         }
-    })
+    }).synonym("typeParam").synonym("typeparam");
 };
 
 /**
