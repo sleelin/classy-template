@@ -18,7 +18,7 @@
 
 * [Node.js](https://nodejs.org) v16+ with NPM 7+, as this template relies heavily on modern syntax features like nullish coalescing, and arrow functions.
 * [JSDoc 4.0.2](https://github.com/jsdoc/jsdoc) as this was the most recent published version at the time of release, however it is also backwards-compatible with JSDoc 3.6.x.
-* [jsdom 22.0.0](https://github.com/jsdom/jsdom) for sanitising parsed markdown and table of contents generation.
+* [jsdom 25.0.1+](https://github.com/jsdom/jsdom) for sanitising parsed markdown and table of contents generation.
 
 # Installation and Usage
 
