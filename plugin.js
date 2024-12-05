@@ -145,9 +145,14 @@ exports.handlers = {
         if (type === Syntax.ClassProperty && !!value) e.code.value = nodeToValue(value);
     },
     jsdocCommentFound: (e) => {
-        // Remove all "typeof" instances in comments, since JSDoc doesn't know what to do with them yet
-        while (e.comment.match(/\{(.*?)typeof\s+(.*?)}/g)) {
-            e.comment = String(e.comment ?? "").replaceAll(/\{(.*?)typeof\s+(.*?)}/g, "{$1$2}")
+        // Remove all "typeof" and "keyof" instances in comments, since JSDoc doesn't know what to do with them yet
+        while (e.comment.match(/\{(.*?)(?:typeof|keyof)\s+(.*?)}/g)) {
+            e.comment = String(e.comment ?? "").replaceAll(/\{(.*?)(?:typeof|keyof)\s+(.*?)}/g, "{$1$2}");
+        }
+        
+        // Remove trailing "=" from types denoting TypeScript optional types from comments
+        while (e.comment.match(/\{(.*?)=}/g)) {
+            e.comment = String(e.comment ?? "").replaceAll(/\{(.*?)=}/g, "{$1}");
         }
     },
     parseComplete(e) {
