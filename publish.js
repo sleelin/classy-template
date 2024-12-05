@@ -939,7 +939,14 @@ class DocletPage {
                 // Replace inherited type parameter types with actual types
                 for (let key of ["params", "properties", "type", "returns"]) if (!!doclet[key]) {
                     for (let value of Array.isArray(doclet[key]) ? doclet[key] : [doclet[key]]) {
-                        if (value?.type?.names) value.type.names = value.type.names.map((n) => templateValues.get(n) ?? n);
+                        // Get a new, unique set of type names, with template names replaced
+                        if (value?.type?.names) value.type.names = Array.from(
+                            new Set(value.type.names.map(t => t
+                                .replace(/(?:Promise\.<)(.*)(?:>)/g, "$1")
+                                .replace(/(Array\.<)(.*)(>)/g, (_, l, n, r) => `${l}${templateValues.get(n) ?? n}${r}`))
+                            ),
+                            (n) => (templateValues.get(n) ?? n)
+                        );
                     }
                 }
             }
