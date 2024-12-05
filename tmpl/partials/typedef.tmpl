@@ -25,14 +25,14 @@
             parentItem = item;
         }
     });
-
+    
     // Determine if we need extra columns, "attributes" and "default"
     obj.hasAttributes = false;
     obj.hasDefault = false;
     obj.hasName = false;
-
+    
     obj.items.forEach((item, index, items) => {
-        if (!item) return;
+        if (!item || item?.type?.names?.includes("never")) return;
         if (item.optional || item.nullable || item.variable) obj.hasAttributes = true;
         if (item.name) obj.hasName = true;
         if (typeof item.defaultvalue !== "undefined" && !obj.isEnum) obj.hasDefault = true;
@@ -58,7 +58,7 @@
     <tbody>
     <?js
     obj.items.forEach((item) => {
-        if (!item) return;
+        if (!item || item?.type?.names?.includes("never")) return;
     ?>
         <tr>
             <?js if (obj.hasName && !!item.nameRowspan) { ?>
@@ -71,12 +71,16 @@
 
             <td class="type">
                 <span class="param">
-                    <?js= (item?.type?.names ? this.partial("tags/type.tmpl", item.type.names) : "") ?>
+                    <?js= (item?.type?.names ? item.type.names.map((name) => `<code>${this.partial("tags/type.tmpl", [name])}</code>`).join("") : "") ?>
                 </span>
             </td>
 
             <?js if (obj.hasDefault) { ?>
-                <td class="default"><?js= (typeof item.defaultvalue !== "undefined") ? this.htmlsafe(item.defaultvalue) : "" ?></td>
+                <td class="default">
+                    <pre class="prettyprint lang-json">
+                        <code><?js= (typeof item.defaultvalue !== "undefined") ? this.htmlsafe(item.defaultvalue) : "" ?></code>
+                    </pre>
+                </td>
             <?js } ?>
 
             <td class="description last">
