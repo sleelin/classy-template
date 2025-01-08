@@ -1,4 +1,4 @@
-<?js if (obj?.items?.length) { ?>
+<?js if (obj?.items?.length && obj.items.some(({description, type}) => !!description || type?.names?.length)) { ?>
     <section class="returns">
         <?js var multiple = obj?.items?.length > 1; ?>
         <h5 class="subsection-title"><?js= obj.title ?></h5>
