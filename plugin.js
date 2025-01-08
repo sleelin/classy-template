@@ -181,7 +181,7 @@ exports.handlers = {
             
             // Go through and fix various issues with tags and generally incorrect doclet details
             fixDocletMetaCodeNodes(doclets.filter(Filters.isDocumented).filter(Filters.isConstant), symbols.filter(Filters.isUndocumented));
-            fixDocletDefaultValues(symbols.filter(Filters.hasDefaultValue));
+            fixDocletDefaultValues(symbols.filter(Filters.hasDefaultValue).filter((d) => !Filters.isContainer(d)));
             fixDocletMetaCodeNodes(doclets.filter(Filters.isClassLike), symbols);
             fixDocletClassConstructors(doclets.filter(Filters.isClass), doclets);
             fixDocletClassConstructors(doclets.filter(Filters.isInterface), doclets);
