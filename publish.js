@@ -941,12 +941,13 @@ class DocletPage {
                     for (let value of Array.isArray(doclet[key]) ? doclet[key] : [doclet[key]]) {
                         // Get a new, unique set of type names, with template names replaced
                         if (value?.type?.names) value.type.names = Array.from(
-                            new Set(value.type.names.map(t => t
-                                .replace(/(?:Promise\.<)(.*)(?:>)/g, "$1")
-                                .replace(/(Array\.<)(.*)(>)/g, (_, l, n, r) => `${l}${templateValues.get(n) ?? n}${r}`))
-                            ),
+                            new Set(value.type.names.flatMap(t => t
+                                .replace(/(?:Promise\.<)(.*)(?:>)/g, "$1").replace(/^(?:\()(.*)(?:\))$/g, "$1")
+                                .replace(/(Array\.<)(.*)(>)/g, (_, l, n, r) => `${l}${templateValues.get(n) ?? n}${r}`)
+                                .split(/(?<![<].*?)[|]/)
+                            )),
                             (n) => (templateValues.get(n) ?? n)
-                        );
+                        ).filter((name) => name !== "void");
                     }
                 }
             }
