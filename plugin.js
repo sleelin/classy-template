@@ -20,6 +20,13 @@ exports.defineTags = function (dictionary) {
             // ...but still flag them as enums
             if (tag.originalTitle === "enum")
                 tags.enum.onTagged(doclet, tag);
+            
+            // Handle types declared via annotation not tied to a value
+            if (tag.value?.type?.names && !doclet.meta?.code?.value) {
+                delete doclet.type;
+                doclet.defaultvalue = JSON.stringify(tag.value.type.names);
+                doclet.defaultvaluetype = "array";
+            }
         }
     }).synonym("enum");
     
