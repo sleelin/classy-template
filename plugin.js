@@ -123,6 +123,11 @@ const Filters = {
      */
     isContainer: (d) => (Filters.isDocumented(d) && ["module", "class", "namespace", "mixin", "external", "interface"].includes(d.kind)),
     /**
+     * Checks whether the given doclet is documented and for a module symbol
+     * @type {FilterMethod}
+     */
+    isModule: (d) => (Filters.isDocumented(d) && d.kind === "module"),
+    /**
      * Create a method to check whether a given doclet can be found in the same source file as specified
      * @param {String} filepath - the path to the directory the given doclet's source file belongs to 
      * @param {String} filename - the name of the source file the given doclet should be found in 
@@ -180,6 +185,7 @@ exports.handlers = {
             fixDocletMetaCodeNodes(doclets.filter(Filters.isClassLike), symbols);
             fixDocletClassConstructors(doclets.filter(Filters.isClass), doclets);
             fixDocletClassConstructors(doclets.filter(Filters.isInterface), doclets);
+            fixDocletModules(doclets.filter(Filters.isModule), doclets.filter(Filters.isClassLike));
             fixDocletDescendants(doclets.filter(Filters.isContainer), doclets);
         }
     }
@@ -261,6 +267,36 @@ function fixDocletClassConstructors(targets, doclets) {
             ...(properties ? {properties} : {}),
             templates
         });
+    }
+}
+
+/**
+ * Fix doclets where module membership and scope are incorrect
+ * @param {ClassyDoclet[]} targets - list of targets to iterate through and find incorrect members for
+ * @param {ClassyDoclet[]} doclets - list of doclets that may be incorrect members of a given target
+ */
+function fixDocletModules(targets, doclets) {
+    // Go through all targets and get their incorrectly assigned members
+    for (let target of targets) {
+        // Get some positional details for finding all doclets that shouldn't be members of this module
+        const {meta: {lineno: firstLine, code}} = target;
+        const lastLine = code?.node?.loc?.end?.line ?? 0;
+        // Get all doclets that are found outside this container
+        const members = doclets.filter(({undocumented, meta: {lineno} = {}}) =>
+            (!undocumented && (lineno < firstLine || lineno > lastLine)));
+        
+        // Fix the symbol's scope, membership, and long name!
+        for (let member of members) {
+            // But only if they don't already have the correct scope
+            if (member.scope === "inner" && member.kind === "namespace") {
+                member.setScope("global");
+                member.setLongname(member.longname.replace(`${target.longname}~`, ""));
+                member.memberof = undefined;
+            }
+        }
+        
+        // Mark the module as undocumented if it no longer has any inner members
+        Object.assign(target, {undocumented: members.filter(({scope}) => scope === "inner").length === 0});
     }
 }
 
