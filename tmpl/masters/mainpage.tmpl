@@ -3,6 +3,6 @@
         <h2 class="page-title"><?js= obj.heading ?></h2>
     </header>
     <?js if (obj?.doclets?.readme) { ?>
-        <?js obj.doclets.readme.forEach((obj) => { ?><section class="readme"><?js= obj.readme ?></section><?js }); ?>
+        <?js obj.doclets.readme.forEach((obj) => { ?><section class="readme description"><?js= obj.readme ?></section><?js }); ?>
     <?js } ?>
 </article>

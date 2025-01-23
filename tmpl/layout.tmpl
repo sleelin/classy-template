@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?js= (obj.kind === "mainpage" && obj.doctitle !== "Home" ? "" : `${this.templateConfig.classy?.name || "JSDoc"}: `) ?><?js= obj.doctitle ?></title>
+    <title><?js= obj.doctitle ?><?js= (obj.kind === "mainpage" && obj.doctitle !== "Home" ? "" : ` - ${this.templateConfig.classy?.name || "JSDoc"}`) ?></title>
     <script src="static/classy.js"></script>
     <script src="static/highlight/highlight.min.js"></script>
     <script src="static/highlight/langs/javascript.min.js"></script>
@@ -34,7 +34,7 @@
                     <img alt="View Source<?js= this.sourceFiles?.link ? ` on ${this.sourceFiles.name}` : ""?>" src="static/assets/<?js= this.sourceFiles?.image ?>" />
                 </a>
             <?js } ?>
-            <div class="page-nav-toggle tiny-page-nav-toggle">
+            <div class="page-nav-toggle">
                 <input type="checkbox" name="tiny-page-nav-toggle" id="tiny-page-nav-toggle" autocomplete="off"/>
                 <label for="tiny-page-nav-toggle">
                     <span></span>

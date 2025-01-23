@@ -1,7 +1,7 @@
 // Hook in tiny nav toggle's orphaned checkboxes
 document.addEventListener("DOMContentLoaded", () => {
-    let source = document.querySelector("#tiny-page-nav-toggle"),
-        targets = [...document.querySelectorAll(".tiny-page-nav-target")];
+    const source = document.querySelector("#tiny-page-nav-toggle");
+    const targets = [...document.querySelectorAll(".tiny-page-nav-target")];
     
     source.addEventListener("change", (event) => {
         for (let target of targets) target.checked = event.target.checked;
@@ -14,14 +14,11 @@ document.addEventListener("DOMContentLoaded", () => {
     window.addEventListener("hashchange", () => 
         document.getElementById(document.location.hash.substring(1))?.scrollIntoView({behavior: "smooth"}));
     
-    let toc = document.querySelector(".content-toc"),
-        links = [
-            ...(document.querySelector(".content-nav")?.querySelectorAll("a") ?? []),
-            ...(toc?.querySelectorAll("a") ?? [])
-        ];
+    const toc = document.querySelector(".toc-tiny details");
+    const links = document.querySelectorAll(".toc a");
     
     for (let a of links) {
-        let target = a.getAttribute("href");
+        const target = a.getAttribute("href");
         
         a.addEventListener("click", (e) => {
             e.preventDefault();

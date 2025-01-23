@@ -2,21 +2,21 @@
 <aside class="content-aside">
     <?js var toc = obj.toc(); ?>
     <?js if (toc.length) { ?>
-        <div class="toc-tiny">
+        <div class="toc toc-tiny">
             <h2 class="page-title"><?js= obj.heading ?></h2>
-            <details class="content-toc">
-                <summary>Table of Contents</summary>
-                <nav class="content-toc"><?js= toc ?></nav>
+            <details class="toc-container">
+                <summary class="toc-title">Table of Contents</summary>
+                <nav class="toc-content"><?js= toc ?></nav>
             </details>
         </div>
-        <div class="toc-regular">
-            <nav class="content-nav">
+        <div class="toc toc-regular">
+            <nav class="toc-container">
                 <h5 class="toc-title">Table of Contents</h5>
-                <div class="toc"><?js= toc ?></div>
+                <div class="toc-content"><?js= toc ?></div>
             </nav>
         </div>
     <?js } else { ?>
-        <div class="toc-tiny">
+        <div class="toc toc-tiny">
             <h2 class="page-title"><?js= obj.heading ?></h2>
         </div>
     <?js } ?>

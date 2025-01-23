@@ -377,8 +377,9 @@ class PublishUtils {
                 if (!(seen[item.longname])) {
                     const title = helper.linkto(item.longname, item.name.replace(/\b(module|event):/g, ''));
                     const children = PublishUtils.buildStructuredNav(data, data({memberof: item.longname, kind: DocletPage.classlike}).get(), seen, depth + 1);
+                    const heading = ((depth < 5 || children.length) ? `<h${depth}>${title}</h${depth}>` : title);
                     
-                    listContent += `<li>${((depth < 5 || children.length) ? `<h${depth}>${title}</h${depth}>` : title) + children}</li>`;
+                    listContent += `<li>${children.length ? `<details><summary>${heading}</summary>${children}</details>` : `${heading}${children}`}</li>`;
                     seen[item.longname] = true;
                 }
             }
@@ -738,7 +739,7 @@ class DocletPage {
         this.heading = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]}: ` : "")
             + `<span class="ancestors">${(source.ancestors || []).join("")}</span>`
             + (source?.kind === "tutorial" ? source.title : source.name);
-        this.doctitle = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]} - ` : "") + source.longname;
+        this.doctitle = (DocletPage.titles[source.kind] ? `${DocletPage.titles[source.kind]}: ` : "") + source.longname;
         this.doclets = Object.assign({}, children.reduce((members, c) => {
             if (c.kind) (members[c.kind] = members[c.kind] || []).push(c);
             return members;
@@ -794,6 +795,10 @@ class DocletPage {
                 parent.classList.add("active");
                 parent = parent.parentElement;
             }
+        }
+        
+        for (let details of nav.querySelectorAll(`details.active`)) {
+            details.setAttribute("open", "open");
         }
         
         // Return the navigation menu, but with the active classes added
