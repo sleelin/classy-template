@@ -166,6 +166,11 @@ exports.handlers = {
         while (e.comment.match(/\{(.*?)=}/g)) {
             e.comment = String(e.comment ?? "").replaceAll(/\{(.*?)=}/g, "{$1}");
         }
+        
+        // Make ternary expressions into regular arrays :(
+        while (e.comment.match(/\{\[(.*?)]}/g)) {
+            e.comment = String(e.comment ?? "").replaceAll(/\{\[(.*?)]}/g, "{$1[]}");
+        }
     },
     parseComplete(e) {
         // console.log(e.doclets.filter((d) => d.longname === "SCIMMY.Types.Resource"))
