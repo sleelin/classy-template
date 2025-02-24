@@ -290,6 +290,10 @@ h6 {
     text-transform: capitalize;
   }
   
+  &.type-signature {
+    white-space: pre;
+  }
+  
   /* Wrap method returns signatures */
   @media (max-width: 480px) {
     dt {
